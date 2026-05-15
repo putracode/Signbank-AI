@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+/* === BASE RESET & SMOOTH SCROLL === */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8fafc; /* Light gray background sesuai Figma */
+  color: #0f172a; /* Slate-900 untuk teks utama */
+}
+
+/* === HAPUS DEFAULT VITE CONTAINER === */
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === UTILITY CUSTOM (OPSIONAL) === */
+@layer components {
+  .btn-primary {
+    @apply bg-blue-700 hover:bg-blue-800 text-white font-medium px-6 py-2.5 rounded-lg transition-colors duration-200;
+  }
+  .btn-secondary {
+    @apply bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-6 py-2.5 rounded-lg transition-colors duration-200;
+  }
+}
