@@ -1,71 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
-const MOCK_TERMS = [
-  {
-    id: 1,
-    term: "Tabungan",
-    category: "Rekening",
-    desc: "Simpanan uang di bank yang penarikannya hanya dapat dilakukan menurut syarat tertentu yang disepakati.",
-    icon: "https://cdn.discussingfilm.net/wp-content/uploads/2026/02/Hoppers-Beaver-Mabel.jpg.webp",
-  },
-  {
-    id: 2,
-    term: "Transfer",
-    category: "Transaksi",
-    desc: "Kirim uang yang diterima bank termasuk hasil inkaso yang ditagih melalui bank, yang harus dibayarkan kepada penerima.",
-    icon: "https://cdn.discussingfilm.net/wp-content/uploads/2026/02/Hoppers-Beaver-Mabel.jpg.webp",
-  },
-  {
-    id: 3,
-    term: "Deposito",
-    category: "Investasi",
-    desc: "Simpanan yang pencairannya hanya dapat dilakukan pada jangka waktu tertentu dan syarat-syarat tertentu.",
-    icon: "https://cdn.discussingfilm.net/wp-content/uploads/2026/02/Hoppers-Beaver-Mabel.jpg.webp",
-  },
-  {
-    id: 4,
-    term: "Bunga Bank",
-    category: "Bunga",
-    desc: "Imbal jasa atas pinjaman uang atau simpanan yang dibayarkan oleh debitur kepada kreditur atau sebaliknya.",
-    icon: "https://cdn.discussingfilm.net/wp-content/uploads/2026/02/Hoppers-Beaver-Mabel.jpg.webp",
-  },
-  {
-    id: 5,
-    term: "Rekening Koran",
-    category: "Rekening",
-    desc: "Daftar mutasi rekening nasabah yang dikeluarkan bank secara berkala untuk mencatat transaksi masuk dan keluar.",
-    icon: "https://cdn.discussingfilm.net/wp-content/uploads/2026/02/Hoppers-Beaver-Mabel.jpg.webp",
-  },
-  {
-    id: 6,
-    term: "Kartu Debit",
-    category: "Keamanan",
-    desc: "Alat pembayaran non-tunai yang menggunakan kartu plastik dan PIN untuk transaksi di mesin ATM atau EDC.",
-    icon: "https://cdn.discussingfilm.net/wp-content/uploads/2026/02/Hoppers-Beaver-Mabel.jpg.webp",
-  },
-];
-
-const CATEGORIES = [
-  "Semua Istilah",
-  "Rekening",
-  "Transaksi",
-  "Investasi",
-  "Bunga",
-  "Keamanan",
-];
+import api from "../services/api";
 
 function GlossaryPage() {
+  const [terms, setTerms] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Semua Istilah");
   const [visibleCount, setVisibleCount] = useState(6);
+  const [loading, setLoading] = useState(true);
 
-  const filteredTerms = MOCK_TERMS.filter((item) => {
+  useEffect(() => {
+    fetchTerms();
+    fetchCategories();
+  }, []);
+
+  const fetchTerms = async () => {
+    try {
+      const { data } = await api.get("/glosarium");
+      setTerms(data.data.glosariums);
+    } catch (err) {
+      console.error("Gagal mengambil data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await api.get("/categories");
+      setCategories(data.data.categories);
+    } catch (err) {
+      console.error("Gagal mengambil data kategori:", err);
+    }
+  };
+
+  const filteredTerms = terms.filter((item) => {
     const matchesSearch =
-      item.term.toLowerCase().includes(search.toLowerCase()) ||
-      item.desc.toLowerCase().includes(search.toLowerCase());
+      item.termName.toLowerCase().includes(search.toLowerCase()) ||
+      item.description.toLowerCase().includes(search.toLowerCase());
     const matchesCategory =
-      activeCategory === "Semua Istilah" || item.category === activeCategory;
+      activeCategory === "Semua Istilah" || item.categoryName === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -157,145 +132,166 @@ function GlossaryPage() {
           </div>
 
           <div className="flex flex-wrap gap-2 mb-8">
-            {CATEGORIES.map((cat) => (
+            <button
+              onClick={() => {
+                setActiveCategory("Semua Istilah");
+                setVisibleCount(6);
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                activeCategory === "Semua Istilah"
+                  ? "bg-blue-700 text-white shadow-md"
+                  : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Semua Istilah
+            </button>
+            {categories.map((cat) => (
               <button
-                key={cat}
+                key={cat.id}
                 onClick={() => {
-                  setActiveCategory(cat);
+                  setActiveCategory(cat.name);
                   setVisibleCount(6);
                 }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === cat ? "bg-blue-700 text-white shadow-md" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeCategory === cat.name
+                    ? "bg-blue-700 text-white shadow-md"
+                    : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
               >
-                {cat}
+                {cat.name}
               </button>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {displayedTerms.length > 0 ? (
-              displayedTerms.map((term) => (
-                <div
-                  key={term.id}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group"
-                >
-                  <div className="h-44 bg-gray-100 flex items-center justify-center text-4xl relative">
-                    <img src={term.icon} alt={term.term} />
-                    
-                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3 w-3"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+          {loading ? (
+            <div className="text-center py-20 text-gray-500">Memuat data glosarium...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+              {displayedTerms.length > 0 ? (
+                displayedTerms.map((term) => (
+                  <div
+                    key={term.id}
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group"
+                  >
+                    <div className="h-44 bg-gray-100 flex items-center justify-center text-4xl relative overflow-hidden">
+                      {term.thumbnailUrl ? (
+                        <img 
+                          src={`http://localhost:3000${term.thumbnailUrl}`} 
+                          alt={term.termName}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Pratinjau
+                      ) : (
+                        <div className="text-gray-300">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                      
+                      <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Pratinjau
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="p-5">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
-                        {term.term}
-                      </h3>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-100">
-                        {term.category}
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
-                      {term.desc}
-                    </p>
-                    <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                      <button className="text-blue-700 font-semibold text-sm hover:underline flex items-center gap-1">
-                        Lihat Detail
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                    <div className="p-5">
+                      <div className="flex justify-between items-start mb-2">
+                        <Link to={`/glossary/${term.id}`}>
+                          <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                            {term.termName}
+                          </h3>
+                        </Link>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-100">
+                          {term.categoryName || "Umum"}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
+                        {term.description}
+                      </p>
+                      <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                        <Link 
+                          to={`/glossary/${term.id}`}
+                          className="text-blue-700 font-semibold text-sm hover:underline flex items-center gap-1"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-blue-700 transition-colors"
-                        title="Simpan"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                          />
-                        </svg>
-                      </button>
+                          Lihat Detail
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </Link>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12 text-gray-500">
+                  <p className="text-lg">Tidak ada istilah yang ditemukan.</p>
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      setActiveCategory("Semua Istilah");
+                    }}
+                    className="mt-2 text-blue-700 hover:underline"
+                  >
+                    Atur Ulang Filter
+                  </button>
                 </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12 text-gray-500">
-                <p className="text-lg">Tidak ada istilah yang ditemukan.</p>
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    setActiveCategory("Semua Istilah");
-                  }}
-                  className="mt-2 text-blue-700 hover:underline"
-                >
-                  Atur Ulang Filter
-                </button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
-          <div className="text-center border-t border-gray-200 pt-8">
-            <p className="text-gray-500 text-sm mb-4">
-              Menampilkan{" "}
-              <span className="font-semibold text-gray-800">
-                {displayedTerms.length}
-              </span>{" "}
-              dari{" "}
-              <span className="font-semibold text-gray-800">
-                {filteredTerms.length}
-              </span>{" "}
-              istilah di Database
-            </p>
-            {displayedTerms.length < filteredTerms.length && (
-              <button
-                onClick={() => setVisibleCount((prev) => prev + 6)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors shadow-sm"
-              >
-                Muat Lebih Banyak
-              </button>
-            )}
-          </div>
+          {!loading && (
+            <div className="text-center border-t border-gray-200 pt-8">
+              <p className="text-gray-500 text-sm mb-4">
+                Menampilkan{" "}
+                <span className="font-semibold text-gray-800">
+                  {displayedTerms.length}
+                </span>{" "}
+                dari{" "}
+                <span className="font-semibold text-gray-800">
+                  {filteredTerms.length}
+                </span>{" "}
+                istilah di Database
+              </p>
+              {displayedTerms.length < filteredTerms.length && (
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 6)}
+                  className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors shadow-sm"
+                >
+                  Muat Lebih Banyak
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>

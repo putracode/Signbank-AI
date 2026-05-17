@@ -12,6 +12,11 @@ const ErrorHandler = (err, req, res, next) => {
     return response(res, 400, err.details[0].message, null);
   }
 
+  // Handle Multer errors
+  if (err.name === 'MulterError') {
+    return response(res, 400, err.message, null);
+  }
+
   const status = err.statusCode || err.status || 500;
   const message = err.message || 'Internal Server Error';
 

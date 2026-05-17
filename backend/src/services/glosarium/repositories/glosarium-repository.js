@@ -1,19 +1,19 @@
 import { nanoid } from "nanoid";
-import { Pool } from "pg";
+import pool from "../../../config/database.js";
 
 class GlosariumRepository {
   constructor() {
-    this._pool = new Pool();
+    this._pool = pool;
   }
 
-  async create({ termName, description, category }) {
+  async create({ termName, description, categoryId, thumbnailUrl, videoUrl }) {
     const id = `glosarium-${nanoid(16)}`;
     const createdAt = new Date().toISOString();
     const updatedAt = createdAt;
 
     const query = {
-      text: 'INSERT INTO glosarium (id, "termName", description, category, "createdAt", "updatedAt") VALUES($1, $2, $3, $4, $5, $6) RETURNING id',
-      values: [id, termName, description, category, createdAt, updatedAt],
+      text: 'INSERT INTO glosarium (id, "termName", description, "categoryId", "thumbnailUrl", "videoUrl", "createdAt", "updatedAt") VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+      values: [id, termName, description, categoryId, thumbnailUrl, videoUrl, createdAt, updatedAt],
     };
 
     const result = await this._pool.query(query);
@@ -22,7 +22,9 @@ class GlosariumRepository {
 
   async findAll() {
     const query = {
-      text: 'SELECT id, "termName", description, category, "createdAt", "updatedAt" FROM glosarium',
+      text: `SELECT g.id, g."termName", g.description, g."categoryId", c.name as "categoryName", g."thumbnailUrl", g."videoUrl", g."createdAt", g."updatedAt" 
+             FROM glosarium g
+             LEFT JOIN categories c ON g."categoryId" = c.id`,
     };
 
     const result = await this._pool.query(query);
@@ -31,7 +33,10 @@ class GlosariumRepository {
 
   async findById(id) {
     const query = {
-      text: 'SELECT id, "termName", description, category, "createdAt", "updatedAt" FROM glosarium WHERE id = $1',
+      text: `SELECT g.id, g."termName", g.description, g."categoryId", c.name as "categoryName", g."thumbnailUrl", g."videoUrl", g."createdAt", g."updatedAt" 
+             FROM glosarium g
+             LEFT JOIN categories c ON g."categoryId" = c.id
+             WHERE g.id = $1`,
       values: [id],
     };
 
@@ -39,11 +44,11 @@ class GlosariumRepository {
     return result.rows[0];
   }
 
-  async update({ id, termName, description, category }) {
+  async update({ id, termName, description, categoryId, thumbnailUrl, videoUrl }) {
     const updatedAt = new Date().toISOString();
     const query = {
-      text: 'UPDATE glosarium SET "termName" = $1, description = $2, category = $3, "updatedAt" = $4 WHERE id = $5 RETURNING id',
-      values: [termName, description, category, updatedAt, id],
+      text: 'UPDATE glosarium SET "termName" = $1, description = $2, "categoryId" = $3, "thumbnailUrl" = $4, "videoUrl" = $5, "updatedAt" = $6 WHERE id = $7 RETURNING id',
+      values: [termName, description, categoryId, thumbnailUrl, videoUrl, updatedAt, id],
     };
 
     const result = await this._pool.query(query);

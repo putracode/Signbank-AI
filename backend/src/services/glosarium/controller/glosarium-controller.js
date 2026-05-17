@@ -3,9 +3,11 @@ import response from "../../../utils/response.js";
 import glosariumRepository from "../repositories/glosarium-repository.js";
 
 export const create = async (req, res, next) => {
-  const { termName, description, category } = req.validated;
+  const { termName, description, categoryId } = req.body;
+  const thumbnailUrl = req.files?.thumbnail ? `/uploads/${req.files.thumbnail[0].filename}` : null;
+  const videoUrl = req.files?.video ? `/uploads/${req.files.video[0].filename}` : null;
 
-  const glosarium = await glosariumRepository.create({ termName, description, category });
+  const glosarium = await glosariumRepository.create({ termName, description, categoryId, thumbnailUrl, videoUrl });
   if (!glosarium) {
     return next(new InvariantError("Glosarium gagal ditambahkan"));
   }
@@ -30,7 +32,10 @@ export const findById = async (req, res, next) => {
     id: glosarium.id,
     termName: glosarium.termName,
     description: glosarium.description,
-    category: glosarium.category,
+    categoryId: glosarium.categoryId,
+    categoryName: glosarium.categoryName,
+    thumbnailUrl: glosarium.thumbnailUrl,
+    videoUrl: glosarium.videoUrl,
     createdAt: glosarium.createdAt,
     updatedAt: glosarium.updatedAt,
   });
@@ -38,9 +43,17 @@ export const findById = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
   const { id } = req.params;
-  const { termName, description, category } = req.validated;
+  const { termName, description, categoryId } = req.body;
+  
+  const existing = await glosariumRepository.findById(id);
+  if (!existing) {
+    return next(new NotFoundError("Glosarium tidak ditemukan"));
+  }
 
-  const glosarium = await glosariumRepository.update({ id, termName, description, category });
+  const thumbnailUrl = req.files?.thumbnail ? `/uploads/${req.files.thumbnail[0].filename}` : existing.thumbnailUrl;
+  const videoUrl = req.files?.video ? `/uploads/${req.files.video[0].filename}` : existing.videoUrl;
+
+  const glosarium = await glosariumRepository.update({ id, termName, description, categoryId, thumbnailUrl, videoUrl });
   if (!glosarium) {
     return next(new NotFoundError("Glosarium gagal diperbarui"));
   }

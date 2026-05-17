@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCamera } from '../hooks/useCamera';
-import { predictSign } from '../services/api'; 
+// import { predictSign } from '../services/api'; 
 
 function TranslatorPage() {
   const { videoRef, status, error, captureFrame } = useCamera();
