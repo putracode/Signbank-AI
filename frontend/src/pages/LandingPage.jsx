@@ -77,8 +77,8 @@ function LandingPage() {
               </div>
               
               <p className="text-gray-600 mb-8 leading-relaxed">
-                Visi komputer berkecepatan tinggi kami mengidentifikasi gerakan tangan dan ekspresi wajah, 
-                mengubah bahasa isyarat menjadi teks dan suara sintetis untuk petugas bank secara real-time.
+                Computer Vision kami mengidentifikasi gerakan tangan, 
+                mengubah bahasa isyarat menjadi teks untuk petugas bank secara real-time.
               </p>
               
               <div className="mt-auto rounded-xl overflow-hidden shadow-inner bg-gray-100 aspect-video relative group">
@@ -101,8 +101,7 @@ function LandingPage() {
               </div>
               
               <p className="text-gray-600 mb-8 leading-relaxed">
-                Mengubah penjelasan petugas menjadi teks yang jelas dan akurat di layar pelanggan, 
-                termasuk terminologi keuangan yang kompleks dan pengungkapan hukum.
+                Mengubah penjelasan petugas menjadi teks yang jelas dan akurat di layar pelanggan.
               </p>
               
               <div className="mt-auto rounded-xl overflow-hidden shadow-inner bg-gray-100 aspect-video relative group flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-100">
@@ -139,9 +138,7 @@ function LandingPage() {
             >
               Mulai Layanan Sekarang
             </Link>
-            <button className="bg-blue-800 text-white hover:bg-blue-700 font-semibold py-3 px-8 rounded-lg transition-all border border-blue-700">
-              Hubungi Sales
-            </button>
+
           </div>
         </div>
       </section>
@@ -149,7 +146,7 @@ function LandingPage() {
       <footer className="bg-white border-t border-gray-200 py-8">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-xl font-bold text-blue-900">SignBank AI</div>
-          <div className="text-sm text-gray-500">© 2026 SignBank AI. Perbankan Aman untuk Semua.</div>
+          <div className="text-sm text-gray-500">© 2026 SignBank AI. CC26-PSU273</div>
         </div>
       </footer>
     </div>

@@ -11,7 +11,12 @@ export function useCamera() {
       try {
         setStatus('loading');
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+          video: { 
+            facingMode: 'user', 
+            width: { ideal: 1920 }, 
+            height: { ideal: 1080 },
+            frameRate: { ideal: 60, min: 30 }
+          }
         });
         if (isActive && videoRef.current) {
           videoRef.current.srcObject = stream;

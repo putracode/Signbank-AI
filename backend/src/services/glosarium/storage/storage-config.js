@@ -32,6 +32,7 @@ export const upload = multer({
       "image/png",
       "image/webp",
       "video/mp4",
+      "video/mkv",
       "video/quicktime",
       "application/pdf"
     ];

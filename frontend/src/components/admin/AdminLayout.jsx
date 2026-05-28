@@ -80,8 +80,8 @@ function AdminLayout() {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
+              <p className="text-xs text-gray-500 mt-1">Haloo</p>
               <p className="text-sm font-bold text-gray-900 leading-none">Administrator</p>
-              <p className="text-xs text-gray-500 mt-1">Status: Online</p>
             </div>
             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

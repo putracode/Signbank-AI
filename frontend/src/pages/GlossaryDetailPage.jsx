@@ -93,8 +93,8 @@ function GlossaryDetailPage() {
                 <p className="text-blue-100 mb-6 text-lg">
                   Pelajari berbagai istilah keuangan lainnya dalam glosarium kami yang dirancang khusus untuk mempermudah aksesibilitas bagi komunitas Tuli.
                 </p>
-                <Link to="/translator" className="bg-white text-blue-700 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors inline-block shadow-lg">
-                  Coba Penerjemah SIBI
+                <Link to="/glossary" className="bg-white text-blue-700 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors inline-block shadow-lg">
+                  Pelajari Lainnya
                 </Link>
               </div>
               <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-blue-600/30 rounded-full blur-3xl group-hover:bg-blue-500/40 transition-colors"></div>
@@ -110,10 +110,6 @@ function GlossaryDetailPage() {
                   </svg>
                   Video Bahasa Isyarat
                 </h3>
-                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span>
-                  HD QUALITY
-                </span>
               </div>
               
               <div className="aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-inner relative group">
