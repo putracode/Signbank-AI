@@ -6,7 +6,7 @@
 /frontend/dist/
 /frontend/build/
 
-# Environment variables (Sangat penting untuk keamanan DB PostgreSQL)
+# Environment variables 
 /backend/.env
 /backend/.prod.env
 *.local

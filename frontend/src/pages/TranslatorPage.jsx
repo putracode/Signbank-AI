@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCamera } from '../hooks/useCamera';
+import useSpeechToText from 'react-hook-speech-to-text';
 // import { predictSign } from '../services/api'; 
 
 function TranslatorPage() {
@@ -8,6 +9,24 @@ function TranslatorPage() {
   
   const [result, setResult] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const {
+    error: speechError,
+    interimResult,
+    isRecording,
+    results,
+    startSpeechToText,
+    stopSpeechToText,
+  } = useSpeechToText({
+    continuous: true,
+    useLegacyResults: false,
+    speechRecognitionProperties: {
+      lang: 'id-ID',
+      interimResults: true
+    }
+  });
+
+  const transcript = (results || []).map((r) => typeof r === 'string' ? r : r.transcript).join(' ') + (interimResult ? ` ${interimResult}` : '');
 
   const handleTranslate = async () => {
     if (status !== 'active') {
@@ -97,14 +116,42 @@ function TranslatorPage() {
             </div>
 
             <div className="bg-white rounded-xl border-l-4 border-green-500 shadow-sm p-6 relative">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-                Respon Petugas
-              </h3>
-              <p className="text-xl text-gray-500 italic font-medium leading-relaxed min-h-[80px]">
-                "Silakan siapkan KTP Anda."
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                  Respon Petugas
+                </h3>
+                
+                <button
+                  onClick={isRecording ? stopSpeechToText : startSpeechToText}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    isRecording 
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                      : 'bg-green-50 text-green-700 hover:bg-green-100'
+                  }`}
+                >
+                  {isRecording ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
+                      Berhenti
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      Bicara
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {speechError && <p className="text-sm text-red-500 mb-2">Browser tidak mendukung Web Speech API.</p>}
+              
+              <p className={`text-xl font-medium leading-relaxed min-h-[80px] ${!transcript ? 'text-gray-400 italic' : 'text-gray-700'}`}>
+                {transcript ? `"${transcript}"` : '"Tekan tombol bicara dan mulai berbicara..."'}
               </p>
             </div>
           </div>
