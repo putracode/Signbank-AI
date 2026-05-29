@@ -17,7 +17,7 @@ const pool = new Pool({
 async function seedAdmin() {
   const id = `user-${nanoid(16)}`;
   const email = 'admin@signbank.com';
-  const password = await bcrypt.hash('admin123', 10);
+  const password = await bcrypt.hash('password', 10);
   const fullname = 'Administrator SignBank';
 
   const query = {
