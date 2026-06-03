@@ -11,6 +11,9 @@
 /backend/.prod.env
 *.local
 
+# Environment variables 
+/ai/.venv
+
 # Logs
 /frontend/*.log
 /backend/*.log

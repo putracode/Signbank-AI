@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useCamera } from "../hooks/useCamera";
 import useSpeechToText from "react-hook-speech-to-text";
@@ -9,6 +9,23 @@ function TranslatorPage() {
 
   const [result, setResult] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [confidence, setConfidence] = useState(0.0);
+  const wsRef = useRef(null);
+
+  const [composedSentence, setComposedSentence] = useState("");
+  const [activePrediction, setActivePrediction] = useState("");
+  const lastCommittedWordRef = useRef("");
+  const lastActiveTimeRef = useRef(0);
+  const pendingWordRef = useRef("");
+  const consecutiveFramesRef = useRef(0);
+
+  const handleSpeak = () => {
+    if ("speechSynthesis" in window && composedSentence) {
+      const utterance = new SpeechSynthesisUtterance(composedSentence);
+      utterance.lang = "id-ID";
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   const {
     error: speechError,
@@ -30,27 +47,141 @@ function TranslatorPage() {
     (results || []).map((r) => (typeof r === "string" ? r : r.transcript)).join(" ") +
     (interimResult ? ` ${interimResult}` : "");
 
-  const handleTranslate = async () => {
-    if (status !== "active") {
-      alert("Kamera belum aktif!");
+  useEffect(() => {
+    if (status !== 'active') {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
       return;
     }
 
-    const imageBase64 = captureFrame();
-    if (!imageBase64) return;
+    const socket = new WebSocket("wss://localhost:8000/ws");
+    wsRef.current = socket;
 
-    setIsProcessing(true);
-    setResult("Memproses isyarat...");
+    socket.onopen = () => {
+      console.log("WebSocket connected to FastAPI");
+      setIsProcessing(true);
+      setResult("Menghubungkan ke engine prediksi...");
+    };
 
-    try {
-      await new Promise((res) => setTimeout(res, 1000));
-      setResult("Hasil simulasi: Menunggu integrasi sistem");
-    } catch (err) {
-      setResult("Gagal menghubungi sistem.");
-      console.error(err);
-    } finally {
+    socket.onmessage = (event) => {
+      try {
+        const response = JSON.parse(event.data);
+        if (response.error) {
+          console.error("Inference error:", response.error);
+        } else {
+          setConfidence(response.confidence);
+          if (response.prediction === "Mengumpulkan frame...") {
+            setActivePrediction("Mengumpulkan frame...");
+            pendingWordRef.current = "";
+            consecutiveFramesRef.current = 0;
+          } else if (response.active && response.prediction && response.confidence >= 0.99) {
+            setActivePrediction(response.prediction);
+            
+            // Check stability of the predicted sign
+            if (response.prediction === pendingWordRef.current) {
+              consecutiveFramesRef.current += 1;
+              // Require 3 consecutive frames (~300ms) to commit the word
+              if (consecutiveFramesRef.current === 2) {
+                if (response.prediction !== lastCommittedWordRef.current) {
+                  setComposedSentence((prev) => {
+                    if (!prev) return response.prediction;
+                    
+                    const tokens = prev.trim().split(/\s+/);
+                    const lastToken = tokens[tokens.length - 1] || "";
+                    
+                    const isLastAlpha = /^[A-Za-z]+$/.test(lastToken);
+                    const isLastNumeric = /^[0-9]+$/.test(lastToken);
+                    
+                    const isNewAlpha = /^[A-Za-z]+$/.test(response.prediction);
+                    const isNewNumeric = /^[0-9]+$/.test(response.prediction);
+                    
+                    const isNewSingleLetter = response.prediction.length === 1 && isNewAlpha;
+                    const isNewSingleDigit = response.prediction.length === 1 && isNewNumeric;
+                    const isNewNumber = isNewNumeric && response.prediction.length > 1;
+                    
+                    let separator = " ";
+                    
+                    // Rule 1: Huruf ketemu huruf tidak ada spasi (e.g. A + K -> AK)
+                    if (isLastAlpha && isNewSingleLetter) {
+                      const customWords = ["ATM", "SALDO", "TRANSFER", "UANG", "RIBU", "JUTA", "MILYAR"];
+                      if (customWords.includes(lastToken.toUpperCase())) {
+                        separator = " ";
+                      } else {
+                        separator = "";
+                      }
+                    }
+                    // Rule 2: Antar angka tidak ada spasi (e.g. 1 + 2 -> 12)
+                    else if (isLastNumeric && (isNewSingleDigit || isNewNumber)) {
+                      separator = "";
+                    }
+                    
+                    return prev + separator + response.prediction;
+                  });
+                  lastCommittedWordRef.current = response.prediction;
+                  lastActiveTimeRef.current = Date.now();
+                } else {
+                  lastActiveTimeRef.current = Date.now();
+                }
+              } else if (consecutiveFramesRef.current > 3) {
+                if (response.prediction === lastCommittedWordRef.current) {
+                  lastActiveTimeRef.current = Date.now();
+                }
+              }
+            } else {
+              pendingWordRef.current = response.prediction;
+              consecutiveFramesRef.current = 1;
+            }
+          } else {
+            setActivePrediction("");
+            pendingWordRef.current = "";
+            consecutiveFramesRef.current = 0;
+            if (Date.now() - lastActiveTimeRef.current > 1000) {
+              lastCommittedWordRef.current = "";
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse websocket message:", err);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("WebSocket disconnected from FastAPI");
       setIsProcessing(false);
-    }
+    };
+
+    socket.onerror = (err) => {
+      console.error("WebSocket error:", err);
+      setIsProcessing(false);
+      setResult("Koneksi engine prediksi terputus.");
+    };
+
+    const intervalId = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        const imageBase64 = captureFrame();
+        if (imageBase64) {
+          socket.send(imageBase64);
+        }
+      }
+    }, 100);
+
+    return () => {
+      clearInterval(intervalId);
+      socket.close();
+      wsRef.current = null;
+    };
+  }, [status, captureFrame]);
+
+  const handleClear = () => {
+    setComposedSentence("");
+    setActivePrediction("");
+    lastCommittedWordRef.current = "";
+    lastActiveTimeRef.current = 0;
+    pendingWordRef.current = "";
+    consecutiveFramesRef.current = 0;
+    setConfidence(0.0);
   };
 
   return (
@@ -186,7 +317,7 @@ function TranslatorPage() {
               {/* Blue Footer Bar */}
               <div className="bg-[#0b5cff] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider">
                 <span>DETECTED SIGN</span>
-                <span className="opacity-90">CONFIDENCE: {status === "active" ? "92%" : "0%"}</span>
+                <span className="opacity-90">CONFIDENCE: {status === "active" ? `${(confidence * 100).toFixed(0)}%` : "0%"}</span>
               </div>
             </div>
 
@@ -194,20 +325,51 @@ function TranslatorPage() {
             <div className="lg:col-span-5 flex flex-col gap-6 justify-between">
               
               {/* Panel 1: Output Teks (Sign to Text) */}
-              <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-start min-h-[240px]">
-                <div className="flex items-center gap-2 mb-4">
-                  {/* Chat Icon */}
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                  </svg>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    OUTPUT TEKS (SIGN-TO-TEXT)
-                  </h3>
+              <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between min-h-[240px]">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {/* Chat Icon */}
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                      </svg>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        RANGKAIAN KALIMAT (SIGN-TO-TEXT)
+                      </h3>
+                    </div>
+
+                    {/* Speak Button */}
+                    {composedSentence && (
+                      <button
+                        onClick={handleSpeak}
+                        title="Suarakan Kalimat"
+                        className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors animate-fade-in"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="min-h-[80px] flex items-center mb-4">
+                    <p className="text-xl font-semibold leading-relaxed text-slate-800">
+                      {composedSentence ? composedSentence : "Mulai isyarat untuk merangkai kalimat..."}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 flex items-center">
-                  <p className={`text-xl lg:text-xl font-medium leading-relaxed text-slate-800 ${isProcessing ? "text-blue-500 animate-pulse" : ""}`}>
-                    {result ? `"${result}"` : `"Saya ingin membuka rekening tabungan baru untuk anak saya."`}
-                  </p>
+
+                {/* Live gesture status / preview indicator */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-400 uppercase">Gestur Aktif:</span>
+                  {activePrediction ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      {activePrediction}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">Menunggu...</span>
+                  )}
                 </div>
               </div>
 
@@ -249,32 +411,24 @@ function TranslatorPage() {
           {/* Action Trigger Button */}
           <div className="mt-8 flex justify-center">
             <button
-              onClick={handleTranslate}
-              disabled={isProcessing || status !== "active"}
+              onClick={handleClear}
+              disabled={status !== "active"}
               className={`px-8 py-4 rounded-full font-bold text-white shadow-md transition-all flex items-center gap-2 ${
-                isProcessing || status !== "active"
+                status !== "active"
                   ? "bg-slate-300 cursor-not-allowed text-slate-500"
-                  : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5"
+                  : "bg-red-500 hover:bg-red-600 hover:shadow-lg transform hover:-translate-y-0.5"
               }`}
             >
-              {isProcessing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Menerjemahkan...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                  </svg>
-                  Terjemahkan Sekarang
-                </>
-              )}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              Bersihkan Hasil
             </button>
           </div>
         </div>
       </main>
     </div>
+
   );
 }
 
