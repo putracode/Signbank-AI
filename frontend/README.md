@@ -1,16 +1,37 @@
-# React + Vite
+# Layanan Frontend (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Folder ini berisi kode frontend (antarmuka pengguna) untuk aplikasi Signbank-AI. Aplikasi ini dirancang dengan menggunakan React, Vite, dan Tailwind CSS untuk memberikan antarmuka yang modern, cepat, dan responsif.
 
-Currently, two official plugins are available:
+## Fitur Utama
+- **React + Vite**: Setup modern dengan Hot Module Replacement (HMR) berkinerja tinggi.
+- **Tailwind CSS**: Penggunaan CSS utility-first untuk desain yang bersih dan responsif.
+- **React Router Dom**: Manajemen navigasi halaman (routing).
+- **FilePond**: Pengunggahan file berkas media (seperti video/gambar gerakan isyarat) dengan visualisasi yang menarik.
+- **React Hook Speech-to-Text**: Pengenalan ucapan suara ke teks secara langsung untuk mendukung penerjemahan suara ke isyarat.
+- **SweetAlert2 & React Hot Toast**: Untuk notifikasi visual yang interaktif kepada pengguna.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Struktur Folder Utama
+- `src/components/`: Komponen UI yang dapat digunakan kembali (Reusable Components).
+- `src/pages/`: Halaman-halaman utama aplikasi (seperti Translator, Dictionary, Dashboard, Login/Register).
+- `src/hooks/`: Custom React Hooks.
+- `src/services/`: Berkas integrasi API/Axios ke server backend.
+- `index.html` & `src/main.jsx`: Titik masuk rendering aplikasi React.
 
-## React Compiler
+## Cara Instalasi & Menjalankan
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Instal Dependensi**
+   ```bash
+   npm install
+   ```
 
-## Expanding the ESLint configuration
+2. **Menjalankan Server Pengembangan Lokal**
+   ```bash
+   npm run dev
+   ```
+   Secara default, aplikasi web dapat diakses melalui alamat lokal yang ditunjukkan di terminal (biasanya [http://localhost:5173](http://localhost:5173)).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3. **Membangun Aplikasi untuk Produksi**
+   ```bash
+   npm run build
+   ```
+   Hasil build akan disimpan di folder `dist/` untuk siap disajikan (deployment).

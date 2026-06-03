@@ -11,9 +11,6 @@
 /backend/.prod.env
 *.local
 
-# Environment variables 
-/ai/.venv
-
 # Logs
 /frontend/*.log
 /backend/*.log
@@ -24,3 +21,15 @@ yarn-debug.log*
 .vscode/
 .idea/
 .DS_Store
+
+# Python / AI environment & cache
+ai/.venv/
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
