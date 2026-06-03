@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import tellerBankImage from "../assets/teller-bank.jpg";
+import bahasaIsyaratImage from "../assets/bahasa-isyarat.jpg";
 
 function LandingPage() {
   return (
@@ -40,7 +42,7 @@ function LandingPage() {
             <div className="relative hidden lg:block">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="../src/assets/teller-bank.jpg" 
+                  src={tellerBankImage} 
                   alt="Petugas bank tersenyum" 
                   className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-500"
                 />
@@ -83,7 +85,7 @@ function LandingPage() {
               
               <div className="mt-auto rounded-xl overflow-hidden shadow-inner bg-gray-100 aspect-video relative group">
                 <img 
-                  src="../src/assets/bahasa-isyarat.jpg" 
+                  src={bahasaIsyaratImage} 
                   alt="Deteksi bahasa isyarat" 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
