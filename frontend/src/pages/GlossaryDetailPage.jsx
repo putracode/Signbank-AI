@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import api from "../services/api";
+import api, { API_URL } from "../services/api";
 
 function GlossaryDetailPage() {
   const { id } = useParams();
@@ -115,10 +115,10 @@ function GlossaryDetailPage() {
               <div className="aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-inner relative group">
                 {term.videoUrl ? (
                   <video 
-                    src={`http://localhost:3000${term.videoUrl}`}
+                    src={`${API_URL}${term.videoUrl}`}
                     controls 
                     className="w-full h-full object-contain"
-                    poster={term.thumbnailUrl ? `http://localhost:3000${term.thumbnailUrl}` : ""}
+                    poster={term.thumbnailUrl ? `${API_URL}${term.thumbnailUrl}` : ""}
                   ></video>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">

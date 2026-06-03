@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import api from "../services/api";
+import api, { API_URL } from "../services/api";
 
 function GlossaryPage() {
   const [terms, setTerms] = useState([]);
@@ -128,7 +128,7 @@ function GlossaryPage() {
                     <div className="h-44 bg-gray-100 flex items-center justify-center text-4xl relative overflow-hidden">
                       {term.thumbnailUrl ? (
                         <img 
-                          src={`http://localhost:3000${term.thumbnailUrl}`} 
+                          src={`${API_URL}${term.thumbnailUrl}`} 
                           alt={term.termName}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
