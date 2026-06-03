@@ -29,7 +29,7 @@ async function seedAdmin() {
     await pool.query(query);
     console.log('Admin user seeded successfully!');
     console.log('Email: admin@signbank.com');
-    console.log('Password: admin123');
+    console.log('Password: password');
   } catch (error) {
     console.error('Error seeding admin user:', error);
   } finally {
