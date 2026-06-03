@@ -1,0 +1,24 @@
+name: Deploy AI to Hugging Face Spaces
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ai/**' # Hanya berjalan jika ada perubahan kode di folder ai
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Push hanya folder 'ai' ke root repositori Hugging Face
+          git subtree push --prefix ai https://putracode:$HF_TOKEN@huggingface.co/spaces/putracode/hand-gesture-ai main
