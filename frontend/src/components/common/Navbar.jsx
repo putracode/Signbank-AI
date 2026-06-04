@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import logo from "../../assets/logo.png"
 
 function Navbar() {
   const location = useLocation();
@@ -17,8 +18,9 @@ function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo / Brand */}
           <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-blue-700 tracking-tight">
-              Signbank
+            <Link to="/" className="text-2xl font-bold text-blue-700 tracking-tight flex items-center gap-2">
+              <img src={logo} alt="logo" className="w-12 h-12 object-contain" />
+              SignBank
             </Link>
           </div>
 
