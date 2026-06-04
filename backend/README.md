@@ -5,7 +5,6 @@ Folder ini berisi kode backend untuk aplikasi Signbank-AI yang dibangun mengguna
 ## Teknologi Utama
 - **Express**: Framework web Node.js yang minimalis dan fleksibel.
 - **PostgreSQL**: Database relasional utama untuk menyimpan data pengguna, kamus, dan metadata.
-- **Redis**: Caching berkinerja tinggi untuk meminimalkan beban database pada kueri yang sering dipanggil.
 - **node-pg-migrate**: Tool untuk melakukan migrasi database PostgreSQL secara terstruktur.
 - **JSON Web Tokens (JWT) & bcrypt**: Digunakan untuk pengamanan autentikasi dan enkripsi kata sandi.
 
@@ -24,7 +23,7 @@ Folder ini berisi kode backend untuk aplikasi Signbank-AI yang dibangun mengguna
    ```
 
 2. **Pengaturan Variabel Lingkungan**
-   - Salin dan ubah konfigurasi `.env` sesuai dengan konfigurasi PostgreSQL dan Redis lokal Anda.
+   - Salin dan ubah konfigurasi `.env` sesuai dengan konfigurasi PostgreSQL lokal Anda.
 
 3. **Menjalankan Migrasi Database**
    ```bash

@@ -7,7 +7,7 @@ Proyek ini adalah sistem penerjemah Bahasa Isyarat khususnya untuk istilah-istil
 Proyek ini terbagi menjadi 3 komponen utama:
 
 1. **[ai](file:///d:/Kuliah/Dicoding/Capstone/Project/Financial%20Sign%20Language/ai)**: Layanan kecerdasan buatan berbasis Python menggunakan FastAPI, TensorFlow, dan MediaPipe untuk pengenalan/klasifikasi gerakan bahasa isyarat keuangan.
-2. **[backend](file:///d:/Kuliah/Dicoding/Capstone/Project/Financial%20Sign%20Language/backend)**: Server backend berbasis Node.js & Express dengan database PostgreSQL dan caching menggunakan Redis.
+2. **[backend](file:///d:/Kuliah/Dicoding/Capstone/Project/Financial%20Sign%20Language/backend)**: Server backend berbasis Node.js & Express dengan database PostgreSQL.
 3. **[frontend](file:///d:/Kuliah/Dicoding/Capstone/Project/Financial%20Sign%20Language/frontend)**: Aplikasi web antarmuka pengguna berbasis React dan Vite, ditata menggunakan Tailwind CSS.
 
 ---
@@ -19,7 +19,6 @@ Pastikan Anda telah menginstal tools berikut di sistem Anda:
 - Node.js (v18 atau lebih baru)
 - Python (v3.9 s.d v3.11 direkomendasikan)
 - PostgreSQL
-- Redis
 
 ### 2. Konfigurasi Lingkungan (Environment Variables)
 - Konfigurasikan file `.env` di dalam folder `backend/` berdasarkan file konfigurasi yang ada.

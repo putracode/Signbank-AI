@@ -146,7 +146,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         while len(padded_sequence) < SEQUENCE_LENGTH:
                             padded_sequence.append(np.zeros(126))
                         input_data = np.expand_dims(padded_sequence, axis=0)
-                        prediction = model.predict(input_data, verbose=0)[0]
+                        # Use fast model calling instead of slow model.predict()
+                        prediction = model(input_data, training=False).numpy()[0]
                         confidence = float(np.max(prediction))
                         predicted_index = int(np.argmax(prediction))
                         predicted_label = encoder.inverse_transform([predicted_index])[0]
@@ -184,23 +185,23 @@ async def websocket_endpoint(websocket: WebSocket):
                         padded_sequence.append(np.zeros(126))
                         
                     input_data = np.expand_dims(padded_sequence, axis=0)
-                    prediction = model.predict(input_data, verbose=0)[0]
+                    # Use fast model calling instead of slow model.predict()
+                    prediction = model(input_data, training=False).numpy()[0]
                     
                     confidence = float(np.max(prediction))
-                    
-                    # Transition detection: if confidence is very low, the hand is likely changing shape
-                    if confidence < 0.50:
-                        low_confidence_counter += 1
-                        if low_confidence_counter >= 3:
-                            sequence_buffer.clear()
-                            prediction_buffer.clear()
-                            low_confidence_counter = 0
+                    predicted_index = int(np.argmax(prediction))
+                    predicted_label = encoder.inverse_transform([predicted_index])[0]
+
+                    # Transition detection: if confidence drops below threshold, or the gesture changes, clear the sequence buffer to adapt instantly
+                    if confidence < 0.80 or (len(prediction_buffer) > 0 and predicted_label != prediction_buffer[-1]):
+                        sequence_buffer.clear()
+                        # Keep the new frame landmark as the start of the next sequence
+                        sequence_buffer.append(landmarks)
+                        prediction_buffer.clear()
+                        low_confidence_counter = 0
                     else:
                         low_confidence_counter = 0
                         
-                    predicted_index = int(np.argmax(prediction))
-                    predicted_label = encoder.inverse_transform([predicted_index])[0]
-                    
                     prediction_buffer.append(predicted_label)
                     stable_prediction = max(
                         set(prediction_buffer),
