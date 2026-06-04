@@ -77,7 +77,7 @@ function TranslatorPage() {
             setActivePrediction("Mengumpulkan frame...");
             pendingWordRef.current = "";
             consecutiveFramesRef.current = 0;
-          } else if (response.active && response.prediction && response.confidence >= 0.99) {
+          } else if (response.active && response.prediction && response.confidence >= 0.85) {
             setActivePrediction(response.prediction);
             
             // Check stability of the predicted sign

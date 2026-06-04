@@ -47,12 +47,21 @@ function Navbar() {
             >
               Tim
             </Link>
-            <Link
-              to="/admin/login"
-              className="bg-blue-700 hover:bg-blue-800 text-white font-medium px-4 py-2 rounded-lg transition-colors ml-4 shadow-sm"
-            >
-              Login
-            </Link>
+            {localStorage.getItem("accessToken") ? (
+              <Link
+                to="/admin/dashboard"
+                className="bg-blue-700 hover:bg-blue-800 text-white font-medium px-4 py-2 rounded-lg transition-colors ml-4 shadow-sm"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/admin/login"
+                className="bg-blue-700 hover:bg-blue-800 text-white font-medium px-4 py-2 rounded-lg transition-colors ml-4 shadow-sm"
+              >
+                Login
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button (Hamburger) */}
@@ -127,13 +136,23 @@ function Navbar() {
             >
               Tim
             </Link>
-            <Link
-              to="/admin/login"
-              onClick={() => setIsOpen(false)}
-              className="mt-4 mx-4 bg-blue-700 hover:bg-blue-800 text-white text-center font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm"
-            >
-              Login Admin
-            </Link>
+            {localStorage.getItem("accessToken") ? (
+              <Link
+                to="/admin/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="mt-4 mx-4 bg-blue-700 hover:bg-blue-800 text-white text-center font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+              >
+                Dashboard Admin
+              </Link>
+            ) : (
+              <Link
+                to="/admin/login"
+                onClick={() => setIsOpen(false)}
+                className="mt-4 mx-4 bg-blue-700 hover:bg-blue-800 text-white text-center font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+              >
+                Login Admin
+              </Link>
+            )}
           </div>
         </div>
       )}

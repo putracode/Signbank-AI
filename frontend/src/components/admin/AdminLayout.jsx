@@ -12,6 +12,16 @@ function AdminLayout() {
 
   const menuItems = [
     {
+      name: "Dashboard",
+      path: "/admin/dashboard",
+      exact: true,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+        </svg>
+      ),
+    },
+    {
       name: "Glosarium",
       path: "/admin/dashboard/glosarium",
       icon: (
@@ -31,6 +41,13 @@ function AdminLayout() {
     },
   ];
 
+  const isItemActive = (item) => {
+    if (item.exact) {
+      return location.pathname === item.path;
+    }
+    return location.pathname.startsWith(item.path);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -48,7 +65,7 @@ function AdminLayout() {
               key={item.path}
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${
-                location.pathname.startsWith(item.path)
+                isItemActive(item)
                   ? "bg-blue-50 text-blue-700 shadow-sm"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               }`}
@@ -59,7 +76,16 @@ function AdminLayout() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-50">
+        <div className="p-4 border-t border-gray-50 space-y-1">
+          <Link
+            to="/translator"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-blue-700 hover:bg-blue-50 transition-all"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Ke Penerjemah
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-600 hover:bg-red-50 transition-all"
@@ -76,7 +102,7 @@ function AdminLayout() {
       <main className="flex-1 overflow-x-hidden">
         <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
           <div className="text-sm font-medium text-gray-500">
-            Dashboard / <span className="text-gray-900 font-bold">{menuItems.find(item => location.pathname.startsWith(item.path))?.name}</span>
+            Dashboard / <span className="text-gray-900 font-bold">{menuItems.find(item => isItemActive(item))?.name || "Utama"}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">

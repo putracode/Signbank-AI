@@ -7,6 +7,7 @@ import GlossaryPage from './pages/GlossaryPage';
 import TeamPage from './pages/TeamPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminGlossaryPage from './pages/AdminGlossaryPage';
 import AdminCategoryPage from './pages/AdminCategoryPage';
 import GlossaryDetailPage from './pages/GlossaryDetailPage';
@@ -39,7 +40,7 @@ function App() {
               <AdminLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<Navigate to="glosarium" replace />} />
+            <Route index element={<AdminDashboardPage />} />
             <Route path="glosarium" element={<AdminGlossaryPage />} />
             <Route path="categories" element={<AdminCategoryPage />} />
           </Route>

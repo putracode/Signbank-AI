@@ -1,295 +1,149 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
-import toast from "react-hot-toast";
-import { FilePond, registerPlugin } from "react-filepond";
-import FilePondPluginImagePreview from "filepond-plugin-image-preview";
-import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
-
-import "filepond/dist/filepond.min.css";
-import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
-
+import { Link } from "react-router-dom";
 import api from "../services/api";
 
-registerPlugin(FilePondPluginImagePreview, FilePondPluginFileValidateType);
-
 function AdminDashboardPage() {
-  const [terms, setTerms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTerm, setEditingTerm] = useState(null);
-  const [formData, setFormData] = useState({
-    termName: "",
-    category: "",
-    description: "",
+  const [stats, setStats] = useState({
+    totalTerms: 0,
+    totalCategories: 0,
   });
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [videoFile, setVideoFile] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [recentTerms, setRecentTerms] = useState([]);
 
   useEffect(() => {
-    fetchTerms();
+    fetchDashboardData();
   }, []);
 
-  const fetchTerms = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const { data } = await api.get("/glosarium");
-      setTerms(data.data.glosariums);
+      const [glossaryRes, categoryRes] = await Promise.all([
+        api.get("/glosarium"),
+        api.get("/categories"),
+      ]);
+
+      const glosariums = glossaryRes.data.data.glosariums || [];
+      const categories = categoryRes.data.data.categories || [];
+
+      setStats({
+        totalTerms: glosariums.length,
+        totalCategories: categories.length,
+      });
+
+      // Ambil 5 istilah terbaru
+      const sorted = [...glosariums].reverse().slice(0, 5);
+      setRecentTerms(sorted);
     } catch (err) {
-      console.error("Gagal mengambil data:", err);
+      console.error("Gagal mengambil data dashboard:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    navigate("/admin/login");
-  };
-
-  const handleOpenModal = (term = null) => {
-    if (term) {
-      setEditingTerm(term);
-      setFormData({
-        termName: term.termName,
-        category: term.category,
-        description: term.description,
-      });
-    } else {
-      setEditingTerm(null);
-      setFormData({ termName: "", category: "", description: "" });
-    }
-    setThumbnailFile(null);
-    setVideoFile(null);
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    const data = new FormData();
-    data.append("termName", formData.termName);
-    data.append("category", formData.category);
-    data.append("description", formData.description);
-    if (thumbnailFile) data.append("thumbnail", thumbnailFile);
-    if (videoFile) data.append("video", videoFile);
-
-    try {
-      if (editingTerm) {
-        await api.put(`/glosarium/${editingTerm.id}`, data, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        toast.success("Istilah berhasil diperbarui!");
-      } else {
-        await api.post("/glosarium", data, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        toast.success("Istilah berhasil ditambahkan!");
-      }
-      setIsModalOpen(false);
-      fetchTerms();
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Gagal menyimpan data";
-      toast.error(`Error: ${errorMessage}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    const result = await Swal.fire({
-      title: "Apakah Anda yakin?",
-      text: "Data yang dihapus tidak dapat dikembalikan!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#1d4ed8",
-      cancelButtonColor: "#dc2626",
-      confirmButtonText: "Ya, hapus!",
-      cancelButtonText: "Batal",
-      borderRadius: "1rem",
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await api.delete(`/glosarium/${id}`);
-        toast.success("Istilah berhasil dihapus!");
-        fetchTerms();
-      } catch (err) {
-        toast.error("Gagal menghapus data");
-      }
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-blue-700">Admin Dashboard</h1>
-        <button
-          onClick={handleLogout}
-          className="text-red-600 font-medium hover:underline"
-        >
-          Logout
-        </button>
-      </nav>
-
-      <main className="p-6 lg:p-10 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Kelola Glosarium</h2>
-            <p className="text-gray-500">Tambah, ubah, atau hapus istilah keuangan</p>
-          </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-800 transition-colors shadow-md"
-          >
-            + Tambah Istilah
-          </button>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 transform translate-x-12 -translate-y-12 opacity-10">
+          <svg className="w-80 h-80" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z" />
+          </svg>
         </div>
+        <div className="relative z-10">
+          <h2 className="text-3xl font-extrabold tracking-tight mb-2">Selamat Datang di Panel Admin</h2>
+          <p className="text-blue-100 max-w-xl text-lg font-medium">
+            Kelola istilah glosarium keuangan isyarat Anda dengan cepat dan mudah.
+          </p>
+        </div>
+      </div>
 
-        {loading ? (
-          <div className="text-center py-20">Memuat data...</div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-sm font-bold text-gray-700">Istilah</th>
-                  <th className="px-6 py-4 text-sm font-bold text-gray-700">Kategori</th>
-                  <th className="px-6 py-4 text-sm font-bold text-gray-700">Deskripsi</th>
-                  <th className="px-6 py-4 text-sm font-bold text-gray-700 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {terms.map((term) => (
-                  <tr key={term.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{term.termName}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold border border-blue-100">
-                        {term.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 line-clamp-1 max-w-xs">
-                      {term.description}
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-3">
-                      <button
-                        onClick={() => handleOpenModal(term)}
-                        className="text-blue-700 text-sm font-bold hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(term.id)}
-                        className="text-red-600 text-sm font-bold hover:underline"
-                      >
-                        Hapus
-                      </button>
-                    </td>
-                  </tr>
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="w-10 h-10 border-4 border-blue-700 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <>
+          {/* Stats Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Total Istilah */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Istilah</p>
+                <h3 className="text-4xl font-extrabold text-blue-700 mt-2">{stats.totalTerms}</h3>
+                <p className="text-xs text-gray-400 mt-2">Istilah isyarat terdaftar</p>
+              </div>
+              <div className="p-4 bg-blue-50 text-blue-700 rounded-2xl">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Total Kategori */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Kategori</p>
+                <h3 className="text-4xl font-extrabold text-indigo-700 mt-2">{stats.totalCategories}</h3>
+                <p className="text-xs text-gray-400 mt-2">Kategori glosarium aktif</p>
+              </div>
+              <div className="p-4 bg-indigo-50 text-indigo-700 rounded-2xl">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 11h.01M7 15h.01M11 7h.01M11 11h.01M11 15h.01M15 7h.01M15 11h.01M15 15h.01" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Terms */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Istilah Terbaru</h3>
+              <div className="divide-y divide-gray-100">
+                {recentTerms.map((term) => (
+                  <div key={term.id} className="py-3 flex justify-between items-center hover:bg-gray-50/50 rounded-xl px-2 transition-colors">
+                    <div>
+                      <h4 className="font-bold text-gray-800">{term.termName}</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">{term.categoryName || "Tanpa Kategori"}</p>
+                    </div>
+                    <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                      Baru
+                    </span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </main>
+                {recentTerms.length === 0 && (
+                  <p className="text-center py-8 text-gray-400 text-sm">Belum ada istilah yang ditambahkan.</p>
+                )}
+              </div>
+            </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-start p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-8 shadow-2xl my-8">
-            <h3 className="text-2xl font-bold mb-6">
-              {editingTerm ? "Edit Istilah" : "Tambah Istilah Baru"}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-between">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nama Istilah</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.termName}
-                  onChange={(e) => setFormData({ ...formData, termName: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Akses Cepat</h3>
+                <div className="space-y-3">
+                  <Link
+                    to="/admin/dashboard/glosarium"
+                    className="w-full flex items-center justify-between p-3.5 bg-blue-50/50 hover:bg-blue-50 text-blue-700 font-bold rounded-xl transition-all"
+                  >
+                    <span>Kelola Glosarium</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+
+                  <Link
+                    to="/admin/dashboard/categories"
+                    className="w-full flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 font-bold rounded-xl transition-all"
+                  >
+                    <span>Kelola Kategori</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                ></textarea>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail (Gambar)</label>
-                <FilePond
-                  files={thumbnailFile ? [thumbnailFile] : []}
-                  onupdatefiles={(fileItems) => {
-                    setThumbnailFile(fileItems[0]?.file || null);
-                  }}
-                  allowMultiple={false}
-                  maxFiles={1}
-                  labelIdle='Seret & letakkan gambar atau <span class="filepond--label-action">Telusuri</span>'
-                  acceptedFileTypes={["image/*"]}
-                  imagePreviewHeight={170}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Video (Bahasa Isyarat)</label>
-                <FilePond
-                  files={videoFile ? [videoFile] : []}
-                  onupdatefiles={(fileItems) => {
-                    setVideoFile(fileItems[0]?.file || null);
-                  }}
-                  allowMultiple={false}
-                  maxFiles={1}
-                  labelIdle='Seret & letakkan video atau <span class="filepond--label-action">Telusuri</span>'
-                  acceptedFileTypes={["video/*"]}
-                />
-              </div>
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg font-bold hover:bg-gray-50"
-                  disabled={isSubmitting}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-white transition-colors flex items-center justify-center gap-2 ${
-                    isSubmitting ? "bg-blue-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800"
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Menyimpan...
-                    </>
-                  ) : (
-                    "Simpan"
-                  )}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

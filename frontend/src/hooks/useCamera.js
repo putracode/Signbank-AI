@@ -46,11 +46,14 @@ export function useCamera() {
   const captureFrame = useCallback(() => {
     if (!videoRef.current || status !== 'active') return null;
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
+    // Resize to 640x480 for fast network transfer and faster MediaPipe inference
+    const targetWidth = 640;
+    const targetHeight = 480;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.8);
+    ctx.drawImage(videoRef.current, 0, 0, targetWidth, targetHeight);
+    return canvas.toDataURL('image/jpeg', 0.6);
   }, [status]);
 
   return { videoRef, status, error, captureFrame };
