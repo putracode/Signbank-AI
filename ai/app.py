@@ -9,6 +9,44 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from tensorflow.keras.models import load_model
 
+import tensorflow as tf
+
+class AttentionLayer(tf.keras.layers.Layer):
+    def __init__(self, units=32, **kwargs):
+        super().__init__(**kwargs)
+        self.units = units
+        self.W = tf.keras.layers.Dense(units, activation="tanh")
+        self.V = tf.keras.layers.Dense(1)
+
+    def call(self, encoder_output, training=None):
+        score   = self.V(self.W(encoder_output))
+        weights = tf.nn.softmax(score, axis=1)
+        context = tf.reduce_sum(weights * encoder_output, axis=1)
+        return context
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({"units": self.units})
+        return config
+
+
+class FocalLoss(tf.keras.losses.Loss):
+    def __init__(self, gamma=2.0, alpha=0.25, **kwargs):
+        super().__init__(**kwargs)
+        self.gamma = gamma
+        self.alpha = alpha
+
+    def call(self, y_true, y_pred):
+        y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0 - 1e-7)
+        ce     = -y_true * tf.math.log(y_pred)
+        weight = self.alpha * tf.pow(1.0 - y_pred, self.gamma)
+        return tf.reduce_mean(tf.reduce_sum(weight * ce, axis=-1))
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({"gamma": self.gamma, "alpha": self.alpha})
+        return config
+
 app = FastAPI(title="Sign Language Recognition API")
 
 # Enable CORS for frontend web interface
@@ -21,11 +59,18 @@ app.add_middleware(
 )
 
 # Load model and label encoder
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "best_model.h5")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "signbank_model.h5")
 ENCODER_PATH = os.path.join(os.path.dirname(__file__), "models", "label_encoder.pkl")
 
 print(f"Loading model from {MODEL_PATH}...")
-model = load_model(MODEL_PATH)
+model = load_model(
+    MODEL_PATH,
+    custom_objects={
+        "AttentionLayer": AttentionLayer,
+        "FocalLoss": FocalLoss
+    },
+    compile=False
+)
 print("Model loaded successfully.")
 
 print(f"Loading label encoder from {ENCODER_PATH}...")
@@ -146,8 +191,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         while len(padded_sequence) < SEQUENCE_LENGTH:
                             padded_sequence.append(np.zeros(126))
                         input_data = np.expand_dims(padded_sequence, axis=0)
-                        # Use fast model calling instead of slow model.predict()
-                        prediction = model(input_data, training=False).numpy()[0]
+                        prediction = model.predict(input_data, verbose=0)[0]
                         confidence = float(np.max(prediction))
                         predicted_index = int(np.argmax(prediction))
                         predicted_label = encoder.inverse_transform([predicted_index])[0]
@@ -185,23 +229,23 @@ async def websocket_endpoint(websocket: WebSocket):
                         padded_sequence.append(np.zeros(126))
                         
                     input_data = np.expand_dims(padded_sequence, axis=0)
-                    # Use fast model calling instead of slow model.predict()
-                    prediction = model(input_data, training=False).numpy()[0]
+                    prediction = model.predict(input_data, verbose=0)[0]
                     
                     confidence = float(np.max(prediction))
-                    predicted_index = int(np.argmax(prediction))
-                    predicted_label = encoder.inverse_transform([predicted_index])[0]
-
-                    # Transition detection: if confidence drops below threshold, or the gesture changes, clear the sequence buffer to adapt instantly
-                    if confidence < 0.80 or (len(prediction_buffer) > 0 and predicted_label != prediction_buffer[-1]):
-                        sequence_buffer.clear()
-                        # Keep the new frame landmark as the start of the next sequence
-                        sequence_buffer.append(landmarks)
-                        prediction_buffer.clear()
-                        low_confidence_counter = 0
+                    
+                    # Transition detection: if confidence is very low, the hand is likely changing shape
+                    if confidence < 0.50:
+                        low_confidence_counter += 1
+                        if low_confidence_counter >= 3:
+                            sequence_buffer.clear()
+                            prediction_buffer.clear()
+                            low_confidence_counter = 0
                     else:
                         low_confidence_counter = 0
                         
+                    predicted_index = int(np.argmax(prediction))
+                    predicted_label = encoder.inverse_transform([predicted_index])[0]
+                    
                     prediction_buffer.append(predicted_label)
                     stable_prediction = max(
                         set(prediction_buffer),
@@ -238,6 +282,4 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    import os
-    port = int(os.environ.get("PORT", 7860))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

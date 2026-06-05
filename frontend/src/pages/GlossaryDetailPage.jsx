@@ -116,7 +116,7 @@ function GlossaryDetailPage() {
                 {term.videoUrl ? (
                   <video 
                     src={`${API_URL}${term.videoUrl}`}
-                    controls 
+                    controls muted autoPlay
                     className="w-full h-full object-contain"
                     poster={term.thumbnailUrl ? `${API_URL}${term.thumbnailUrl}` : ""}
                   ></video>
