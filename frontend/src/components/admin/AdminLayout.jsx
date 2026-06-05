@@ -1,8 +1,15 @@
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 
 function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -49,14 +56,36 @@ function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex relative overflow-x-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 md:hidden transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen">
-        <div className="p-6 border-b border-gray-50">
+      <aside
+        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed md:sticky top-0 bottom-0 left-0 h-screen z-40 transform transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        <div className="p-6 border-b border-gray-50 flex items-center justify-between">
           <h1 className="text-xl font-bold text-blue-700 flex items-center gap-2">
             <span className="w-8 h-8 bg-blue-700 text-white rounded-lg flex items-center justify-center text-sm font-black">SB</span>
             Admin Panel
           </h1>
+          {/* Close button for mobile */}
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-1 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden focus:outline-none"
+            aria-label="Tutup menu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         
         <nav className="flex-1 p-4 space-y-2 mt-4">
@@ -99,11 +128,24 @@ function AdminLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-x-hidden">
-        <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-          <div className="text-sm font-medium text-gray-500">
-            Dashboard / <span className="text-gray-900 font-bold">{menuItems.find(item => isItemActive(item))?.name || "Utama"}</span>
+      <main className="flex-1 min-w-0 overflow-x-hidden">
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            {/* Burger menu button for mobile */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden focus:outline-none"
+              aria-label="Buka menu"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="text-sm font-medium text-gray-500">
+              Dashboard / <span className="text-gray-900 font-bold">{menuItems.find(item => isItemActive(item))?.name || "Utama"}</span>
+            </div>
           </div>
+          
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
               <p className="text-xs text-gray-500 mt-1">Haloo</p>
@@ -117,7 +159,7 @@ function AdminLayout() {
           </div>
         </header>
         
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           <Outlet />
         </div>
       </main>

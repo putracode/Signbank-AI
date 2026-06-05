@@ -134,14 +134,14 @@ function AdminGlossaryPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Kelola Glosarium</h2>
           <p className="text-gray-500">Tambah, ubah, atau hapus istilah keuangan</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-800 transition-colors shadow-md"
+          className="w-full sm:w-auto bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-800 transition-colors shadow-md text-center"
         >
           + Tambah Istilah
         </button>
@@ -150,7 +150,7 @@ function AdminGlossaryPage() {
       {loading ? (
         <div className="text-center py-20">Memuat data...</div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
