@@ -89,12 +89,12 @@ function AdminGlossaryPage() {
     try {
       if (editingTerm) {
         await api.put(`/glosarium/${editingTerm.id}`, data, {
-          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 120000,
         });
         toast.success("Istilah berhasil diperbarui!");
       } else {
         await api.post("/glosarium", data, {
-          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 120000,
         });
         toast.success("Istilah berhasil ditambahkan!");
       }
