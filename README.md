@@ -198,8 +198,8 @@ npm run dev
 
 Kami adalah tim pengembang yang berkomitmen untuk mewujudkan inklusi keuangan bagi penyandang disabilitas rungu melalui kolaborasi multidisiplin:
 
-*   **Reza Prasetiyo Syahputra** (Fullstack Developer) — Bertanggung jawab pada pengembangan backend, integrasi database, keamanan API, dan integrasi UI frontend.
-*   **Saputra** (Fullstack Developer) — Bertanggung jawab pada pengembangan frontend, UI/UX translator, kamus interaktif, dan koordinasi API.
+*   **Reza Prasetiyo Syahputra** (Fullstack Developer) — Bertanggung jawab pada pengembangan frontend, UI/UX translator, kamus interaktif UI frontend.
+*   **Saputra** (Fullstack Developer) — bertanggung jawab pada pengembangan backend, integrasi database, keamanan API, dan integrasiAPI.
 *   **Andika Putra Perdana** (AI Engineer) — Bertanggung jawab pada perancangan arsitektur model LSTM, pemrosesan koordinat MediaPipe, dan optimasi WebSocket.
 *   **Adi Pratama** (AI Engineer) — Bertanggung jawab pada pengumpulan data latih, pelatihan model LSTM, evaluasi model, dan integrasi API FastAPI.
 *   **Wahyu Nurhabib** (Data Science) — Bertanggung jawab pada rekayasa fitur data landmark, analisis dataset, pembersihan data gestur, dan penyelarasan label encoder.
