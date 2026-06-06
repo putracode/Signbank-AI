@@ -5,11 +5,6 @@ import mediapipe as mp
 from collections import deque, Counter
 import tensorflow as tf
 
-
-# =========================================================
-# CUSTOM OBJECTS — wajib ada agar model v3 bisa diload
-# =========================================================
-
 class AttentionLayer(tf.keras.layers.Layer):
     def __init__(self, units=32, **kwargs):
         super().__init__(**kwargs)
@@ -47,10 +42,6 @@ class FocalLoss(tf.keras.losses.Loss):
         return config
 
 
-# =========================================================
-# CONFIG
-# =========================================================
-
 MODEL_PATH   = "production_model/signbank_model.h5"
 ENCODER_PATH = "models/label_encoder.pkl"
 
@@ -69,10 +60,6 @@ WEAK_CLASSES = {
 }
 
 
-# =========================================================
-# LOAD MODEL
-# =========================================================
-
 print("[INFO] Loading model V3...")
 model = tf.keras.models.load_model(
     MODEL_PATH,
@@ -83,7 +70,6 @@ model = tf.keras.models.load_model(
     compile=False
 )
 
-# Warmup — hilangkan delay prediksi pertama
 print("[INFO] Warming up...")
 _ = model(np.zeros((1, SEQUENCE_LENGTH, TOTAL_FEATURES), dtype=np.float32),
           training=False)
@@ -92,10 +78,6 @@ print("[INFO] Loading encoder...")
 encoder = joblib.load(ENCODER_PATH)
 print(f"[INFO] Siap. Kelas: {len(encoder.classes_)}")
 
-
-# =========================================================
-# MEDIAPIPE
-# =========================================================
 
 mp_hands = mp.solutions.hands
 mp_draw  = mp.solutions.drawing_utils
@@ -109,10 +91,6 @@ hands = mp_hands.Hands(
 )
 
 
-# =========================================================
-# BUFFER
-# =========================================================
-
 sequence_buffer   = deque(maxlen=SEQUENCE_LENGTH)
 prediction_buffer = deque(maxlen=SMOOTHING_WINDOW)
 
@@ -123,32 +101,7 @@ stable_count    = 0
 cooldown        = 0
 
 
-# =========================================================
-# FUNGSI NORMALISASI — SAMA PERSIS dengan landmark_extraction_2hand.py
-# =========================================================
-
 def normalize_hand(hand_data: list) -> list:
-    """
-    Normalisasi koordinat tangan relatif terhadap wrist (landmark ke-0).
-
-    KENAPA INI WAJIB:
-    Dataset dilatih menggunakan landmark_extraction_2hand.py yang
-    menerapkan normalisasi wrist-centered. Koordinat setiap landmark
-    dikurangi posisi wrist sehingga wrist selalu di (0,0,0).
-
-    Kalau realtime tidak melakukan ini → distribusi data berbeda total
-    dari training → model tidak bisa mengenali gesture apapun dengan benar.
-
-    Contoh:
-        Raw MediaPipe: wrist = (0.5, 0.6, 0), telunjuk = (0.6, 0.5, -0.05)
-        Setelah norm : wrist = (0.0, 0.0, 0), telunjuk = (0.1, -0.1, -0.05)
-
-    Args:
-        hand_data: list 63 nilai [x0,y0,z0, x1,y1,z1, ..., x20,y20,z20]
-
-    Returns:
-        list 63 nilai setelah dikurangi posisi wrist
-    """
     wrist_x = hand_data[0]
     wrist_y = hand_data[1]
     wrist_z = hand_data[2]

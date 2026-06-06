@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useCamera } from "../hooks/useCamera";
 import useSpeechToText from "react-hook-speech-to-text";
-// import { predictSign } from '../services/api';
 
 function TranslatorPage() {
   const { videoRef, status, error, captureFrame } = useCamera();
@@ -80,10 +79,8 @@ function TranslatorPage() {
           } else if (response.active && response.prediction && response.confidence >= 0.85) {
             setActivePrediction(response.prediction);
             
-            // Check stability of the predicted sign
             if (response.prediction === pendingWordRef.current) {
               consecutiveFramesRef.current += 1;
-              // Require 3 consecutive frames (~300ms) to commit the word
               if (consecutiveFramesRef.current === 2) {
                 if (response.prediction !== lastCommittedWordRef.current) {
                   setComposedSentence((prev) => {
@@ -104,7 +101,6 @@ function TranslatorPage() {
                     
                     let separator = " ";
                     
-                    // Rule 1: Huruf ketemu huruf tidak ada spasi (e.g. A + K -> AK)
                     if (isLastAlpha && isNewSingleLetter) {
                       const customWords = ["ATM", "SALDO", "TRANSFER", "UANG", "RIBU", "JUTA", "MILYAR"];
                       if (customWords.includes(lastToken.toUpperCase())) {
@@ -113,7 +109,6 @@ function TranslatorPage() {
                         separator = "";
                       }
                     }
-                    // Rule 2: Antar angka tidak ada spasi (e.g. 1 + 2 -> 12)
                     else if (isLastNumeric && (isNewSingleDigit || isNewNumber)) {
                       separator = "";
                     }
@@ -189,7 +184,6 @@ function TranslatorPage() {
     <div className="flex min-h-screen bg-slate-50/50">
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 max-w-7xl mx-auto w-full">
-          {/* Page Title & Status */}
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-800 tracking-tight">Penerjemah</h1>
@@ -203,7 +197,6 @@ function TranslatorPage() {
               </span>
             </div>
 
-            {/* Speech to Text Toggle in header area */}
             <button
               onClick={isRecording ? stopSpeechToText : startSpeechToText}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm border ${
@@ -228,13 +221,10 @@ function TranslatorPage() {
             </button>
           </div>
 
-          {/* Main 2-Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
-            {/* Left Column: Access Camera & Real-Time Monitoring */}
             <div className="lg:col-span-7 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
               
-              {/* Camera Header */}
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
@@ -243,11 +233,9 @@ function TranslatorPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  {/* Camera Icon */}
                   <svg className="w-4.5 h-4.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                   </svg>
-                  {/* Settings Icon */}
                   <svg className="w-4.5 h-4.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -255,7 +243,6 @@ function TranslatorPage() {
                 </div>
               </div>
 
-              {/* Camera Video / Stream Container */}
               <div className="relative flex-1 bg-slate-900 flex items-center justify-center overflow-hidden min-h-[350px]">
                 {status === "error" && (
                   <div className="text-center p-6">
@@ -315,22 +302,18 @@ function TranslatorPage() {
                 )}
               </div>
 
-              {/* Blue Footer Bar */}
               <div className="bg-[#0b5cff] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider">
                 <span>DETECTED SIGN</span>
                 <span className="opacity-90">CONFIDENCE: {status === "active" ? `${(confidence * 100).toFixed(0)}%` : "0%"}</span>
               </div>
             </div>
 
-            {/* Right Column: Stacked Text Boxes */}
             <div className="lg:col-span-5 flex flex-col gap-6 justify-between">
               
-              {/* Panel 1: Output Teks (Sign to Text) */}
               <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between min-h-[240px]">
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      {/* Chat Icon */}
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                       </svg>
@@ -339,7 +322,6 @@ function TranslatorPage() {
                       </h3>
                     </div>
 
-                    {/* Speak Button */}
                     {composedSentence && (
                       <button
                         onClick={handleSpeak}
@@ -360,7 +342,6 @@ function TranslatorPage() {
                   </div>
                 </div>
 
-                {/* Live gesture status / preview indicator */}
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-400 uppercase">Gestur Aktif:</span>
                   {activePrediction ? (
@@ -374,24 +355,15 @@ function TranslatorPage() {
                 </div>
               </div>
 
-              {/* Panel 2: Input Suara Petugas (Speech to Text) */}
               <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-start min-h-[240px]">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    {/* Microphone Icon */}
                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
                     </svg>
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                       INPUT SUARA PETUGAS (SPEECH-TO-TEXT)
                     </h3>
-                  </div>
-
-                  {/* Waveform Animation */}
-                  <div className="flex items-center gap-0.5">
-                    <span className={`w-0.75 h-3.5 bg-blue-600 rounded-full ${isRecording ? "animate-bounce" : "opacity-60"}`}></span>
-                    <span className={`w-0.75 h-5 bg-blue-600 rounded-full ${isRecording ? "animate-bounce [animation-delay:0.15s]" : "opacity-60"}`}></span>
-                    <span className={`w-0.75 h-3 bg-blue-600 rounded-full ${isRecording ? "animate-bounce [animation-delay:0.3s]" : "opacity-60"}`}></span>
                   </div>
                 </div>
                 
@@ -409,7 +381,6 @@ function TranslatorPage() {
             </div>
           </div>
 
-          {/* Action Trigger Button */}
           <div className="mt-8 flex justify-center">
             <button
               onClick={handleClear}

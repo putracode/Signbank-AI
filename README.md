@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Solusi Kecerdasan Buatan Terintegrasi untuk Penerjemahan Bahasa Isyarat Sektor Keuangan</strong><br />
-  <em>Capstone Project Bangkit Academy — Tim CC26-PSU273</em>
+  <em>Capstone Project Coding Camp 2026 powered by DBS Foundation — Tim CC26-PSU273</em>
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 
 ## Tentang Proyek
 
-Akses ke layanan perbankan dan keuangan merupakan hak dasar bagi semua orang, termasuk komunitas Tuli. Namun, kendala komunikasi antara petugas bank (teller/customer service) dan nasabah Tuli sering kali menjadi hambatan utama dalam menciptakan layanan keuangan yang inklusif. Istilah-istilah keuangan seperti "setoran awal", "rekening koran", "transfer", atau "suku bunga" memiliki visualisasi gerakan isyarat yang spesifik dan jarang dipahami oleh masyarakat umum.
+Akses ke layanan perbankan dan keuangan merupakan hak dasar bagi semua orang, termasuk komunitas Tuli. Namun, kendala komunikasi antara petugas bank (teller/customer service) dan nasabah Tuli sering kali menjadi hambatan utama dalam menciptakan layanan keuangan yang inklusif. Istilah-istilah keuangan seperti "saldo", "uang", "transfer", atau "ATM" memiliki visualisasi gerakan isyarat yang spesifik dan jarang dipahami oleh masyarakat umum.
 
 **Signbank-AI** hadir sebagai solusi jembatan komunikasi interaktif dua arah yang memanfaatkan teknologi kecerdasan buatan (AI). Proyek ini dirancang untuk menerjemahkan bahasa isyarat (Sign-to-Text) terkait istilah keuangan secara langsung menggunakan kamera web, serta menerjemahkan ucapan petugas bank menjadi teks (Speech-to-Text) untuk dibaca oleh nasabah Tuli.
 

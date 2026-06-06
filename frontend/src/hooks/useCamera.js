@@ -46,7 +46,6 @@ export function useCamera() {
   const captureFrame = useCallback(() => {
     if (!videoRef.current || status !== 'active') return null;
     const canvas = document.createElement('canvas');
-    // Resize to 640x480 for fast network transfer and faster MediaPipe inference
     const targetWidth = 640;
     const targetHeight = 480;
     canvas.width = targetWidth;

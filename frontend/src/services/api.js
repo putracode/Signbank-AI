@@ -9,7 +9,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add the access token to the headers
 api.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem("accessToken");
@@ -21,7 +20,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -41,12 +39,11 @@ api.interceptors.response.use(
         });
 
         const newAccessToken = data.data.accessToken;
-        localStorage.setItem("accessToken", newAccessToken);
+        localStorage.setItem("access~Token", newAccessToken);
 
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axios(originalRequest);
+        return api(originalRequest);
       } catch (refreshError) {
-        // If refresh token fails, logout the user
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         window.location.href = "/admin/login";

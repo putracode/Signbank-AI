@@ -29,9 +29,6 @@ os.makedirs(PRODUCTION_DIR, exist_ok=True)
 os.makedirs(TENSORBOARD_DIR, exist_ok=True)
 
 
-# ============================================================
-# CUSTOM LAYER — AttentionLayer (sama dengan V2, wajib ada)
-# ============================================================
 class AttentionLayer(tf.keras.layers.Layer):
     def __init__(self, units=32, **kwargs):
         super().__init__(**kwargs)
@@ -51,9 +48,6 @@ class AttentionLayer(tf.keras.layers.Layer):
         return config
 
 
-# ============================================================
-# CUSTOM LOSS — FocalLoss (sama dengan V2, wajib ada)
-# ============================================================
 class FocalLoss(tf.keras.losses.Loss):
     def __init__(self, gamma=2.0, alpha=0.25, **kwargs):
         super().__init__(**kwargs)
@@ -72,9 +66,6 @@ class FocalLoss(tf.keras.losses.Loss):
         return config
 
 
-# ============================================================
-# CUSTOM CALLBACK — EpochLoggerCallback (sama dengan V2)
-# ============================================================
 class EpochLoggerCallback(tf.keras.callbacks.Callback):
     def __init__(self, save_path, patience_overfit=5):
         super().__init__()
@@ -149,63 +140,26 @@ class EpochLoggerCallback(tf.keras.callbacks.Callback):
         print("=" * 62 + "\n")
 
 
-# ============================================================
-# DATA AUGMENTATION PADA LANDMARK
-# ============================================================
 def augment_sequence(sequence: np.ndarray) -> np.ndarray:
-    """
-    Augmentasi sequence landmark untuk meningkatkan variasi data.
-
-    Kenapa ini penting?
-    Dataset direkam dalam kondisi tetap (pencahayaan, jarak, kecepatan
-    sama). Model yang hanya lihat data homogen akan overfit dan gagal
-    saat kondisi sedikit berbeda di realtime.
-
-    Augmentasi mensimulasikan kondisi yang bervariasi:
-    1. Gaussian noise  → simulasi gerakan tangan tidak sempurna
-    2. Time warping    → simulasi kecepatan gesture berbeda
-    3. Scale jitter    → simulasi jarak tangan ke kamera berbeda
-    4. Mirror flip     → simulasi sisi tangan yang berbeda
-
-    Augmentasi HANYA dilakukan pada training set, TIDAK pada test set.
-    Test set harus tetap original agar evaluasi akurat.
-
-    Args:
-        sequence: np.ndarray shape (40, 126)
-
-    Returns:
-        np.ndarray shape (40, 126) yang sudah diaugmentasi
-    """
     seq = sequence.copy()
 
-    # Pilih augmentasi secara acak (bisa lebih dari satu)
     aug_type = np.random.choice(['noise', 'scale', 'time', 'mirror'],
                                 p=[0.4, 0.2, 0.2, 0.2])
 
     if aug_type == 'noise':
-        # Gaussian noise kecil — simulasi hand tremor
-        # std=0.01 artinya noise sekitar 1% dari range koordinat (0-1)
         noise = np.random.normal(0, 0.01, seq.shape).astype(np.float32)
         seq   = np.clip(seq + noise, 0.0, 1.0)
 
     elif aug_type == 'scale':
-        # Scale jitter: koordinat diperkecil/diperbesar sedikit
-        # Simulasi tangan lebih dekat atau lebih jauh dari kamera
         scale = np.random.uniform(0.90, 1.10)
         seq   = np.clip(seq * scale, 0.0, 1.0)
 
     elif aug_type == 'time':
-        # Time warping: acak ulang urutan frame sedikit
-        # Simulasi kecepatan gesture yang berbeda
         n = len(seq)
-        # Ambil sample dengan replacement di sekitar urutan asli
         indices = np.sort(np.random.choice(n, size=n, replace=True))
         seq = seq[indices]
 
     elif aug_type == 'mirror':
-        # Mirror horizontal: flip koordinat x
-        # Koordinat x ada di posisi 0, 3, 6, ... (setiap 3 nilai)
-        # Ini simulasi tangan dari sudut berbeda
         seq_mirrored = seq.copy()
         for i in range(0, seq.shape[1], 3):
             seq_mirrored[:, i] = 1.0 - seq[:, i]
@@ -215,23 +169,7 @@ def augment_sequence(sequence: np.ndarray) -> np.ndarray:
 
 
 def create_augmented_dataset(X_train, y_train, augment_factor=2):
-    """
-    Buat dataset augmentasi dari X_train.
-
-    augment_factor=2 artinya dataset train jadi 3x lebih besar:
-    original + 2 versi augmentasi per sampel.
-
-    Tidak sentuh X_test sama sekali.
-
-    Args:
-        X_train       : (N, 40, 126)
-        y_train       : (N, num_classes)
-        augment_factor: berapa kopi augmentasi per sampel
-
-    Returns:
-        X_aug, y_aug dengan shape (N * (1+factor), 40, 126)
-    """
-    print(f"  Augmentasi {augment_factor}x dari {len(X_train)} sampel...")
+    print(f"  Augmentasi {augment_factor}x from {len(X_train)} sampel...")
 
     X_list = [X_train]
     y_list = [y_train]
@@ -247,35 +185,17 @@ def create_augmented_dataset(X_train, y_train, augment_factor=2):
     X_combined = np.concatenate(X_list, axis=0)
     y_combined = np.concatenate(y_list, axis=0)
 
-    # Shuffle agar augmented dan original tidak berkelompok
     idx = np.random.permutation(len(X_combined))
     print(f"  Dataset setelah augmentasi: {X_combined.shape}")
     return X_combined[idx], y_combined[idx]
 
 
-# ============================================================
-# BUILD MODEL 
-# ============================================================
 def build_model_v3(num_classes):
-    """
-    Perubahan dari V2:
-    - BiLSTM(64→128) dikecilkan jadi BiLSTM(32→64)
-      Alasan: dataset kita ~4500 sampel setelah augmentasi.
-              Model 178K param terlalu besar → overfit.
-              Model 52K param lebih sesuai ukuran dataset.
-    - Dropout 0.3 → 0.4
-      Alasan: dropout lebih tinggi paksa model belajar fitur
-              yang lebih robust, bukan hafal data training.
-    - L2 regularization pada Dense layer
-      Alasan: tambahan penalti untuk bobot yang terlalu besar.
-    """
-
     inp = tf.keras.Input(
         shape=(SEQUENCE_LENGTH, TOTAL_FEATURES),
         name="gesture_input"
     )
 
-    # BiLSTM 1 — lebih kecil dari V2 (32 bukan 64)
     x = tf.keras.layers.Bidirectional(
         tf.keras.layers.LSTM(
             32,
@@ -287,7 +207,6 @@ def build_model_v3(num_classes):
     )(inp)
     x = tf.keras.layers.Dropout(0.4, name="drop_1")(x)
 
-    # BiLSTM 2 — lebih kecil dari V2 (64 bukan 128)
     x = tf.keras.layers.Bidirectional(
         tf.keras.layers.LSTM(
             64,
@@ -299,10 +218,8 @@ def build_model_v3(num_classes):
     )(x)
     x = tf.keras.layers.Dropout(0.4, name="drop_2")(x)
 
-    # Custom Attention Layer
     x = AttentionLayer(units=32, name="attention")(x)
 
-    # Dense dengan L2 regularization
     x = tf.keras.layers.Dense(
         32,
         activation='relu',
@@ -322,9 +239,6 @@ def build_model_v3(num_classes):
     return model
 
 
-# ============================================================
-# CUSTOM TRAINING LOOP — tf.GradientTape
-# ============================================================
 def custom_train_loop(model, X_train, y_train, loss_fn,
                       optimizer, batch_size=16, demo_steps=3):
     print(f"\n[GradientTape] Demo {demo_steps} batch...")
@@ -352,18 +266,8 @@ def custom_train_loop(model, X_train, y_train, loss_fn,
     print("  [GradientTape] OK\n")
 
 
-# ============================================================
-# EVALUASI LENGKAP
-# ============================================================
 def evaluate_and_plot(model, X_test, y_test, encoder,
                       history=None):
-    """
-    Evaluasi lengkap dengan:
-    - Test accuracy, precision, recall, F1
-    - Classification report per kelas
-    - Confusion matrix
-    - Training history plot (jika history tersedia)
-    """
     print("\n" + "=" * 62)
     print("  EVALUASI PADA TEST SET")
     print("=" * 62)
@@ -393,7 +297,6 @@ def evaluate_and_plot(model, X_test, y_test, encoder,
     )
     print(report)
 
-    # Simpan report
     report_path = os.path.join(PRODUCTION_DIR, "classification_report_v3.txt")
     with open(report_path, 'w') as f:
         f.write("SignBank — Test Set Evaluation\n")
@@ -401,7 +304,6 @@ def evaluate_and_plot(model, X_test, y_test, encoder,
         f.write(report)
     print(f"Report: {report_path}")
 
-    # ── Confusion Matrix ──────────────────────────────────────
     cm      = confusion_matrix(y_true, y_pred)
     cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True)
     sz      = max(14, len(label_names) // 2)
@@ -426,12 +328,10 @@ def evaluate_and_plot(model, X_test, y_test, encoder,
     plt.close()
     print(f"Confusion matrix: {cm_path}")
 
-    # ── Training History ──────────────────────────────────────
     if history is not None:
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
         fig.suptitle('SignBank — Training History', fontsize=14)
 
-        # Accuracy
         axes[0].plot(history.history['accuracy'],     label='Train', lw=2)
         axes[0].plot(history.history['val_accuracy'], label='Val',   lw=2)
         axes[0].axhline(0.85, color='red', linestyle='--',
@@ -443,7 +343,6 @@ def evaluate_and_plot(model, X_test, y_test, encoder,
         axes[0].legend()
         axes[0].grid(True, alpha=0.3)
 
-        # Loss
         axes[1].plot(history.history['loss'],     label='Train', lw=2)
         axes[1].plot(history.history['val_loss'], label='Val',   lw=2)
         axes[1].set_title('Loss')
@@ -457,7 +356,6 @@ def evaluate_and_plot(model, X_test, y_test, encoder,
         plt.close()
         print(f"Training history: {hist_path}")
 
-        # Cek gap train vs val — deteksi overfitting
         final_train = history.history['accuracy'][-1]
         final_val   = history.history['val_accuracy'][-1]
         gap         = final_train - final_val
@@ -471,15 +369,11 @@ def evaluate_and_plot(model, X_test, y_test, encoder,
     return acc
 
 
-# ============================================================
-# MAIN
-# ============================================================
 def main():
     print("=" * 62)
     print("  SIGNBANK — Training dengan Anti-Overfitting")
     print("=" * 62)
 
-    # ── 1. Load Dataset ──────────────────────────────────────
     print("\n[1/8] Memuat dataset...")
     try:
         X_train = np.load(os.path.join(PREPARED_DIR, 'X_train.npy'))
@@ -495,10 +389,9 @@ def main():
     num_classes = y_train.shape[1]
 
     print(f"  X_train : {X_train.shape}")
-    print(f"  X_test  : {X_test.shape}  ← TIDAK diaugmentasi")
+    print(f"  X_test  : {X_test.shape}")
     print(f"  Kelas   : {num_classes}")
 
-    # ── 2. Augmentasi pada TRAIN saja ────────────────────────
     print("\n[2/8] Data augmentation pada train set...")
     X_train_aug, y_train_aug = create_augmented_dataset(
         X_train, y_train, augment_factor=1
@@ -507,7 +400,6 @@ def main():
     print(f"  Train sesudah: {X_train_aug.shape[0]} sampel (original + augmentasi)")
     print(f"  Test tetap   : {X_test.shape[0]} sampel (original)")
 
-    # ── 3. Build Model ───────────────────────────────────────
     print("\n[3/8] Build model V3 (lebih kecil, lebih robust)...")
     model = build_model_v3(num_classes)
     model.summary(line_length=62)
@@ -517,7 +409,6 @@ def main():
     print(f"  V2 parameters  : ~178,000")
     print(f"  Pengurangan    : {(1 - total_params/178000)*100:.0f}%")
 
-    # ── 4. Compile ───────────────────────────────────────────
     print("\n[4/8] Compile dengan FocalLoss...")
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     loss_fn   = FocalLoss(gamma=2.0, alpha=0.25)
@@ -532,7 +423,6 @@ def main():
         ]
     )
 
-    # ── 5. Demo GradientTape ─────────────────────────────────
     print("\n[5/8] Demo tf.GradientTape...")
     demo_opt = tf.keras.optimizers.Adam(learning_rate=0.001)
     custom_train_loop(
@@ -540,7 +430,6 @@ def main():
         loss_fn, demo_opt, batch_size=16, demo_steps=3
     )
 
-    # ── 6. Callbacks ─────────────────────────────────────────
     print("[6/8] Setup callbacks...")
     log_dir = os.path.join(
         TENSORBOARD_DIR,
@@ -560,7 +449,7 @@ def main():
 
         tf.keras.callbacks.EarlyStopping(
             monitor='val_accuracy',
-            patience=20,          # lebih sabar dari V2
+            patience=20,
             min_delta=0.001,
             restore_best_weights=True,
             verbose=0
@@ -577,21 +466,18 @@ def main():
 
     print(f"  TensorBoard: tensorboard --logdir {TENSORBOARD_DIR}")
 
-    # ── 7. Training ──────────────────────────────────────────
     print("\n[7/8] Training...")
     history = model.fit(
         X_train_aug, y_train_aug,
         validation_data=(X_test, y_test),
         epochs=100,
-        batch_size=32,     # lebih besar dari V2 → training lebih stabil
+        batch_size=32,
         callbacks=callbacks,
         verbose=0
     )
 
-    # ── 8. Export + Evaluasi ─────────────────────────────────
     print("\n[8/8] Export model dan evaluasi...")
 
-    # Load model terbaik
     best_model = tf.keras.models.load_model(
         KERAS_V3_PATH,
         custom_objects={
@@ -600,15 +486,12 @@ def main():
         }
     )
 
-    # Simpan model utama sebagai .h5 agar nama file simpel dan mudah dipakai inference
     best_model.save(KERAS_V3_PATH)
     print(f"  H5 Model  : {KERAS_V3_PATH}")
 
-    # SavedModel tetap disimpan untuk kebutuhan production/deployment
     tf.saved_model.save(best_model, SAVEDMODEL_V3_PATH)
     print(f"  SavedModel: {SAVEDMODEL_V3_PATH}")
 
-    # Evaluasi lengkap
     acc = evaluate_and_plot(best_model, X_test, y_test, encoder, history)
 
     print("\n" + "=" * 62)

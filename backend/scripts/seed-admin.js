@@ -18,8 +18,8 @@ const pool = process.env.DATABASE_URL
 
 async function seedAdmin() {
   const id = `user-${nanoid(16)}`;
-  const email = 'admin@signbank.com';
-  const password = await bcrypt.hash('password', 10);
+  const email = process.env.ADMIN_EMAIL || 'admin@signbank.com';
+  const password = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'password', 10);
   const fullname = 'Administrator SignBank';
 
   const query = {
@@ -30,8 +30,8 @@ async function seedAdmin() {
   try {
     await pool.query(query);
     console.log('Admin user seeded successfully!');
-    console.log('Email: admin@signbank.com');
-    console.log('Password: password');
+    console.log(`Email: ${email}`);
+    console.log(`Password: ${process.env.ADMIN_PASSWORD ? '********' : 'password'}`);
   } catch (error) {
     console.error('Error seeding admin user:', error);
   } finally {
