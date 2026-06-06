@@ -17,7 +17,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 api.interceptors.response.use(
@@ -33,7 +33,7 @@ api.interceptors.response.use(
         if (!refreshToken) {
           throw new Error("Refresh token tidak ditemukan");
         }
-        
+
         const { data } = await axios.put(`${API_URL}/authentications`, {
           refreshToken,
         });
@@ -42,7 +42,7 @@ api.interceptors.response.use(
         localStorage.setItem("accessToken", newAccessToken);
 
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return api(originalRequest);
+        return axios(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
@@ -52,7 +52,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
