@@ -24,7 +24,8 @@ class GlosariumRepository {
     const query = {
       text: `SELECT g.id, g."termName", g.description, g."categoryId", c.name as "categoryName", g."thumbnailUrl", g."videoUrl", g."createdAt", g."updatedAt" 
              FROM glosarium g
-             LEFT JOIN categories c ON g."categoryId" = c.id`,
+             LEFT JOIN categories c ON g."categoryId" = c.id
+             ORDER BY LOWER(g."termName") ASC`,
     };
 
     const result = await this._pool.query(query);
