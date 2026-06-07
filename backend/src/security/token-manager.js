@@ -2,8 +2,11 @@ import jwt from "jsonwebtoken";
 import InvariantError from "../exceptions/invariant-error.js";
 
 const TokenManager = {
-  generateAccessToken: (payload) =>
-    jwt.sign(payload, process.env.ACCESS_TOKEN_KEY, { expiresIn: process.env.ACCESS_TOKEN_AGE || "3h" }),
+  generateAccessToken: (payload) => {
+    const age = process.env.ACCESS_TOKEN_AGE || "3h";
+    const expiresIn = /^\d+$/.test(age) ? parseInt(age, 10) : age;
+    return jwt.sign(payload, process.env.ACCESS_TOKEN_KEY, { expiresIn });
+  },
   generateRefreshToken: (payload) => jwt.sign(payload, process.env.REFRESH_TOKEN_KEY),
   verify: (accessToken, secret) => {
     try {
