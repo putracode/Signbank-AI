@@ -8,7 +8,7 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import "filepond/dist/filepond.min.css";
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
 
-import api from "../services/api";
+import api, { API_URL } from "../services/api";
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginFileValidateType);
 
@@ -86,23 +86,64 @@ function AdminGlossaryPage() {
     if (thumbnailFile) data.append("thumbnail", thumbnailFile);
     if (videoFile) data.append("video", videoFile);
 
+    const url = editingTerm
+      ? `${API_URL}/glosarium/${editingTerm.id}`
+      : `${API_URL}/glosarium`;
+    const method = editingTerm ? "PUT" : "POST";
+
     try {
-      if (editingTerm) {
-        await api.put(`/glosarium/${editingTerm.id}`, data, {
-          timeout: 120000,
-        });
-        toast.success("Istilah berhasil diperbarui!");
-      } else {
-        await api.post("/glosarium", data, {
-          timeout: 120000,
-        });
-        toast.success("Istilah berhasil ditambahkan!");
+      let token = localStorage.getItem("accessToken");
+      
+      let response = await fetch(url, {
+        method: method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: data,
+      });
+
+      if (response.status === 401) {
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          const refreshRes = await fetch(`${API_URL}/authentications`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refreshToken }),
+          });
+          
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            const newToken = refreshData.data.accessToken;
+            localStorage.setItem("accessToken", newToken);
+            
+            response = await fetch(url, {
+              method: method,
+              headers: {
+                Authorization: `Bearer ${newToken}`,
+              },
+              body: data,
+            });
+          } else {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            window.location.href = "/admin/login";
+            throw new Error("Sesi Anda telah berakhir, silakan login kembali.");
+          }
+        }
       }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Gagal menyimpan data (Status: ${response.status})`);
+      }
+
+      toast.success(editingTerm ? "Istilah berhasil diperbarui!" : "Istilah berhasil ditambahkan!");
       setIsModalOpen(false);
       fetchTerms();
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Gagal menyimpan data";
-      toast.error(`Error: ${errorMessage}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
