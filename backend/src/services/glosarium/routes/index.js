@@ -21,8 +21,8 @@ const uploadFields = upload.fields([
 
 router.get("/", findAll);
 router.get("/:id", findById);
-router.post("/", authenticateToken, uploadFields, validate(createSchema), create);
-router.put("/:id", authenticateToken, uploadFields, validate(updateSchema), update);
+router.post("/", uploadFields, authenticateToken, validate(createSchema), create);
+router.put("/:id", uploadFields, authenticateToken, validate(updateSchema), update);
 router.delete("/:id", authenticateToken, destroy);
 
 export default router;
