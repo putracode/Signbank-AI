@@ -7,7 +7,8 @@ function GlossaryPage() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Semua Istilah");
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +45,14 @@ function GlossaryPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const displayedTerms = filteredTerms.slice(0, visibleCount);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeCategory]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const displayedTerms = filteredTerms.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredTerms.length / itemsPerPage);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -87,7 +95,6 @@ function GlossaryPage() {
             <button
               onClick={() => {
                 setActiveCategory("Semua Istilah");
-                setVisibleCount(6);
               }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 activeCategory === "Semua Istilah"
@@ -102,7 +109,6 @@ function GlossaryPage() {
                 key={cat.id}
                 onClick={() => {
                   setActiveCategory(cat.name);
-                  setVisibleCount(6);
                 }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeCategory === cat.name
@@ -197,26 +203,54 @@ function GlossaryPage() {
             </div>
           )}
 
-          {!loading && (
-            <div className="text-center border-t border-gray-200 pt-8">
-              <p className="text-gray-500 text-sm mb-4">
-                Menampilkan{" "}
-                <span className="font-semibold text-gray-800">
-                  {displayedTerms.length}
-                </span>{" "}
-                dari{" "}
-                <span className="font-semibold text-gray-800">
-                  {filteredTerms.length}
-                </span>{" "}
-                istilah di Database
-              </p>
-              {displayedTerms.length < filteredTerms.length && (
-                <button
-                  onClick={() => setVisibleCount((prev) => prev + 6)}
-                  className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors shadow-sm"
-                >
-                  Muat Lebih Banyak
-                </button>
+          {!loading && totalPages > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-transparent pt-6 pb-4 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">
+                  Menampilkan <span className="font-semibold text-gray-800">{filteredTerms.length > 0 ? indexOfFirstItem + 1 : 0}</span> hingga{" "}
+                  <span className="font-semibold text-gray-800">{Math.min(indexOfLastItem, filteredTerms.length)}</span> dari{" "}
+                  <span className="font-semibold text-gray-800">{filteredTerms.length}</span> istilah
+                </p>
+              </div>
+              {totalPages > 1 && (
+                <div>
+                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm bg-white" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`relative inline-flex items-center rounded-l-md px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                        currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <span className="sr-only">Sebelumnya</span>
+                      &lt;
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        aria-current={currentPage === page ? "page" : undefined}
+                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 ${
+                          currentPage === page
+                            ? "z-10 bg-blue-700 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                            : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`relative inline-flex items-center rounded-r-md px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                        currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <span className="sr-only">Berikutnya</span>
+                      &gt;
+                    </button>
+                  </nav>
+                </div>
               )}
             </div>
           )}

@@ -27,6 +27,14 @@ function AdminGlossaryPage() {
   const [videoFile, setVideoFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTerms = terms.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(terms.length / itemsPerPage);
+
   useEffect(() => {
     fetchTerms();
     fetchCategories();
@@ -36,6 +44,7 @@ function AdminGlossaryPage() {
     try {
       const { data } = await api.get("/glosarium");
       setTerms(data.data.glosariums);
+      setCurrentPage(1); // Reset page on fetch
     } catch (err) {
       console.error("Gagal mengambil data istilah:", err);
     } finally {
@@ -191,53 +200,128 @@ function AdminGlossaryPage() {
       {loading ? (
         <div className="text-center py-20">Memuat data...</div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-sm font-bold text-gray-700">Istilah</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-700">Kategori</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-700">Deskripsi</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-700 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {terms.map((term) => (
-                <tr key={term.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900">{term.termName}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold border border-blue-100">
-                      {term.categoryName || "Tanpa Kategori"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 line-clamp-1 max-w-xs">
-                    {term.description}
-                  </td>
-                  <td className="px-6 py-4 text-right space-x-3">
-                    <button
-                      onClick={() => handleOpenModal(term)}
-                      className="text-blue-700 text-sm font-bold hover:underline"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(term.id)}
-                      className="text-red-600 text-sm font-bold hover:underline"
-                    >
-                      Hapus
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {terms.length === 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <td colSpan="4" className="px-6 py-20 text-center text-gray-400">
-                    Belum ada istilah yang ditambahkan.
-                  </td>
+                  <th className="px-6 py-4 text-sm font-bold text-gray-700">Istilah</th>
+                  <th className="px-6 py-4 text-sm font-bold text-gray-700">Kategori</th>
+                  <th className="px-6 py-4 text-sm font-bold text-gray-700">Deskripsi</th>
+                  <th className="px-6 py-4 text-sm font-bold text-gray-700 text-right">Aksi</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {currentTerms.map((term) => (
+                  <tr key={term.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">{term.termName}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold border border-blue-100">
+                        {term.categoryName || "Tanpa Kategori"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 line-clamp-1 max-w-xs">
+                      {term.description}
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-3">
+                      <button
+                        onClick={() => handleOpenModal(term)}
+                        className="text-blue-700 text-sm font-bold hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(term.id)}
+                        className="text-red-600 text-sm font-bold hover:underline"
+                      >
+                        Hapus
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {terms.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-20 text-center text-gray-400">
+                      Belum ada istilah yang ditambahkan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+              <div className="flex flex-1 justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${
+                    currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Sebelumnya
+                </button>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${
+                    currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Berikutnya
+                </button>
+              </div>
+              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Menampilkan <span className="font-medium">{indexOfFirstItem + 1}</span> hingga{" "}
+                    <span className="font-medium">{Math.min(indexOfLastItem, terms.length)}</span> dari{" "}
+                    <span className="font-medium">{terms.length}</span> istilah
+                  </p>
+                </div>
+                <div>
+                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                        currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <span className="sr-only">Sebelumnya</span>
+                      &lt;
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        aria-current={currentPage === page ? "page" : undefined}
+                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 ${
+                          currentPage === page
+                            ? "z-10 bg-blue-700 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                            : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                        currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <span className="sr-only">Berikutnya</span>
+                      &gt;
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
