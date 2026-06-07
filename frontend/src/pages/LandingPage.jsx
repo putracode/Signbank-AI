@@ -19,7 +19,7 @@ function LandingPage() {
               <p className="text-lg text-gray-600 leading-relaxed">
                 Signbank memanfaatkan kecerdasan buatan untuk menyediakan 
                 terjemahan real-time antara bahasa isyarat dan ucapan, memastikan 
-                layanan keuangan inklusif bagi komunitas Tuli.
+                layanan keuangan inklusif bagi komunitas Tuli berbasis BISINDO.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
